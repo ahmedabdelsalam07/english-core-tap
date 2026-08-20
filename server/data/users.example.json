@@ -1,0 +1,4 @@
+{
+  "note": "Copy this file to data/users.json after running `npm run seed`. Users are created only by an admin - there is NO public registration endpoint by design. Passwords stored here are bcrypt hashes, never plaintext.",
+  "users": []
+}
