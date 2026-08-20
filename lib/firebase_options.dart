@@ -3,8 +3,7 @@ import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
 /// Firebase configuration for the English Core TaP app.
-/// Web config is production-ready; native platforms require extra setup
-/// (google-services.json / GoogleService-Info.plist) before they can build.
+/// Web and Android configs are production-ready.
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
@@ -12,10 +11,11 @@ class DefaultFirebaseOptions {
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
+        return android;
       case TargetPlatform.iOS:
         throw UnsupportedError(
-          'Firebase native setup is not configured yet. '
-          'Run `flutterfire configure` to add Android/iOS support.',
+          'Firebase iOS setup is not configured yet. '
+          'Run `flutterfire configure` to add iOS support.',
         );
       default:
         throw UnsupportedError(
@@ -23,6 +23,15 @@ class DefaultFirebaseOptions {
         );
     }
   }
+
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'AIzaSyDsIOSnH4OwkffJzR3k2lPSNxwkRWzn6Mw',
+    appId: '1:461612467766:android:00c4ae5f9eb84f8284fa97',
+    messagingSenderId: '461612467766',
+    projectId: 'english-core-tap',
+    authDomain: 'english-core-tap.firebaseapp.com',
+    storageBucket: 'english-core-tap.firebasestorage.app',
+  );
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyCXNjgt9sKFfINHawhrqDyCEQF3uAGxyLE',

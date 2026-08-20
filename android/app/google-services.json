@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "461612467766",
+    "project_id": "english-core-tap",
+    "storage_bucket": "english-core-tap.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:461612467766:android:00c4ae5f9eb84f8284fa97",
+        "android_client_info": {
+          "package_name": "com.englishcore.tap"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDsIOSnH4OwkffJzR3k2lPSNxwkRWzn6Mw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

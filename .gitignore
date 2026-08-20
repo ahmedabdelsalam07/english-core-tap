@@ -44,6 +44,7 @@
 
 # Student accounts (secrets) - never commit
 firebase_users.csv
+users.csv
 مستخدمين_الطلاب.csv
 
 # iOS/XCode related

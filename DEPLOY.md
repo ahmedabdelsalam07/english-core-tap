@@ -1,55 +1,47 @@
 # English Core TaP — دليل النشر (Deployment Guide)
 
-كل حاجة جاهزة عندك. خطوات بسيطة بالترتيب.
+النظام الحالي يعمل بالكامل على **GitHub Pages + Firebase Auth** (مجاني، بدون فيزا).
+
+| المكوّن | مزوّد | الوظيفة |
+|---|---|---|
+| الموقع (الواجهة) | GitHub Pages | يعرض التطبيق للطلاب |
+| اللوجن واليوزرز | Firebase Auth | دخول الطلاب (100+ حساب) |
+| الكود | GitHub (public) | `ahmedabdelsalam07/english-core-tap` |
 
 ---
 
-## 1) شغل التطبيق على جهازك فورًا (اختياري)
-- دبل كليك على ملف **`شغّل-التطبيق.bat`**
-- التطبيق هيفتح تلقائيًا على `http://localhost:8080`
-- مفيش أي حاجة لازم تتسطب — سيرفر PowerShell جاهز
-
-## 2) ارفع التطبيق (الفرونت) على Netlify — مجاني
-1. افتح `https://app.netlify.com` وسجّل (بإيميلك أو GitHub)
-2. اضغط **"Add new site"** ثم **"Deploy manually"**
-3. اسحب مجلد **`build\web`** كاملًا وارميه في الصندوق
-4. استنى ثواني — هيطلعلك رابط مثل `english-core-tap.netlify.app`
-5. ده الرابط اللي تبعته لأي حد والأب يفتح عليه
-
-## 3) ارفع السيرفر (اللوجن + داش بورد اليوزرز) — مجاني
-السيرفر ده اللي بيدخّل اليوزرز وبيفعّل اللوجن.
-
-1. سجّل في `https://render.com` (مجاني)
-2. **New** → **Web Service** → اربطه بمستودع GitHub، أو ارفع مجلد `server`
-3. من صفحة الإعدادات اضبط **Environment**:
-   - `JWT_SECRET` = أي نص طويل عشوائي (مثل `MySuperSecret123!`)
-   - `ADMIN_PASSWORD` = كلمة سر لوحة التحكم بتاعتك
-   - `PORT` = `8080`
-4. ارفع. هياخد رابط مثل `english-core-tap.onrender.com`
-
-## 4) اربط التطبيق بالسيرفر
-عشان اللوجن يشتغل، نسخة الويب لازم تعرف عنوان السيرفر:
+## الرابط النهائي
 
 ```
-flutter build web --release --dart-define=API_BASE_URL=https://english-core-tap.onrender.com
+https://ahmedabdelsalam07.github.io/english-core-tap/
 ```
 
-- أعد بناء (الخطوة فوق) ثم ارفع `build\web` تاني على Netlify (نفس خطوة 2)
-- بعدها اللوجن هيشتغل والداش بورد هيكون على:
-  `https://english-core-tap.onrender.com/admin`
+## كيف يتحدّث الموقع عند أي تعديل؟
 
-## 5) لوحة تحكم اليوزرز
-- افتح `…/admin` (على السيرفر)
-- ادخل بكلمة سر `ADMIN_PASSWORD`
-- من هناك: **إضافة يوزر / تغيير كلمة السر / حذف يوزر**
-- اليوزرز المحفوظين في `server\data\users.json`
+- أي `git push` إلى فرع `main` يبني الموقع تلقائيًا وينشره (ملف `.github/workflows/deploy-web.yml`).
 
-> ملاحظة: في الاستضافة المجانية على Render، ملف `users.json` بيتحفظ لحد ما تعيد رفع السيرفر. عشان بيانات دائمة مضمونة 100%، الأفضل نقل اليوزرز لقاعدة بيانات لاحقًا.
+## إضافة/تغيير/حذف طلاب
 
-## ملخص الملفات
-| الملف | الوظيفة |
-|---|---|
-| `build\web` | التطبيق النهائي الجاهز للرفع على Netlify |
-| `server` | الباك اند + داش بورد اليوزرز (للرفع على Render) |
-| `netlify.toml` | إعدادات Netlify |
-| `شغّل-التطبيق.bat` | تشغيل التطبيق محليًا بضغطة |
+البيانات على Firebase (وليست في الكود). يوجد سكربت إنشاء:
+```powershell
+.\create_firebase_users.ps1 -ApiKey "AIzaSyCXNjgt9sKFfINHawhrqDyCEQF3uAGxyLE"
+```
+- الملفات `firebase_users.csv` / `مستخدمين_الطلاب.csv` مستثناة من الرفع (لا تُحمَّل على GitHub).
+
+## إعدادات مهمة في Firebase
+- **Authentication → Sign-in method**: Email/Password مُفعّل.
+- **Authentication → Settings → Authorized domains**: أضِف `ahmedabdelsalam07.github.io`.
+
+## بنية اللوجن
+- الطالب يدخل **اسم مستخدم** (مثل `student1`) ويُحوَّل تلقائيًا إلى إيميل `student1@englishcore.app` في `lib/data/services/backend_client.dart`.
+- لا توجد أي كلمة سر في كود الموقع — كل الفحص على Firebase.
+
+## التشغيل محليًا
+```
+flutter run -d chrome
+```
+أو دبل كليك على `شغّل-التطبيق.bat`.
+
+## ملاحظات
+- الإصدار الأصلي القديم (سيرفر Node على Render) لم يعد مستخدمًا؛ `server/` محفوظ كمرجع فقط.
+- بناء Android/iOS يتطلب لاحقًا `flutterfire configure` لربط Firebase بالأجهزة.
