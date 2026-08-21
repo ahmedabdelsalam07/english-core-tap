@@ -56,19 +56,17 @@ class TtsService {
   static const List<String> _maleMarkers = ['male', 'man', 'boy'];
   static const List<String> _femaleMarkers = ['female', 'woman', 'girl'];
 
-  // Known Android (Google TTS) voice name fragments.
-  static const List<String> _androidMaleHints = [
+  // Known engine voice name fragments (Google TTS + Samsung + iOS).
+  // One combined table — the fragments are distinctive enough that a single
+  // platform-independent lookup is safe and far more robust.
+  static const List<String> _maleHints = [
     '-iom', 'iob', 'tpd', 'tpc', 'tpb', 'g-d', 'rda',
-  ];
-  static const List<String> _androidFemaleHints = [
-    'iol', 'iac', 'iuf', 'sfg', 'sfd', 'sfc', 'sfx', 'sfb', 'tpf', 'rmc',
-    'g-f',
-  ];
-  static const List<String> _iosMaleHints = [
     'fred', 'aaron', 'daniel', 'alex', 'nathan', 'gordon', 'thomas',
     'andrew', 'ravi', 'reed', 'rocko', 'grandpa', 'eddy',
   ];
-  static const List<String> _iosFemaleHints = [
+  static const List<String> _femaleHints = [
+    'iol', 'iac', 'iuf', 'sfg', 'sfd', 'sfc', 'sfx', 'sfb', 'tpf', 'rmc',
+    'g-f',
     'samantha', 'karen', 'moira', 'tessa', 'zira', 'susan', 'serena',
     'katya', 'ava', 'aria', 'ana', 'allison', 'nico', 'ellen', 'grandma',
     'shelley', 'sandy', 'flo',
@@ -330,12 +328,10 @@ class TtsService {
     for (final m in _maleMarkers) {
       if (lowerName.contains(m)) return VoiceGender.male;
     }
-    final mHints = Platform.isAndroid ? _androidMaleHints : _iosMaleHints;
-    for (final h in mHints) {
+    for (final h in _maleHints) {
       if (lowerName.contains(h)) return VoiceGender.male;
     }
-    final fHints = Platform.isAndroid ? _androidFemaleHints : _iosFemaleHints;
-    for (final h in fHints) {
+    for (final h in _femaleHints) {
       if (lowerName.contains(h)) return VoiceGender.female;
     }
     return VoiceGender.auto;
