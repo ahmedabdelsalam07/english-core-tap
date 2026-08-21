@@ -7,14 +7,16 @@ import 'package:flutter_tts/flutter_tts.dart';
 import '../../core/enums.dart';
 import 'api_config.dart';
 
-/// A TTS voice that can be offered to the user (en-US only).
+/// A TTS voice that can be offered to the user (English only).
 class AvailableVoice {
   final String name;
   final String locale;
+  final String rawLocale; // exact string reported by the engine
   final VoiceGender gender; // male / female / auto (= undetected)
   const AvailableVoice({
     required this.name,
     required this.locale,
+    required this.rawLocale,
     required this.gender,
   });
 }
@@ -233,9 +235,10 @@ class TtsService {
 
   /// Resolves and applies the closest matching voice for [_currentGender].
   ///
-  /// Fallback chain: exact gender → a different en-US voice than the one
-  /// already applied → system default. A strong pitch differentiation
-  /// guarantees the male/female switch is always clearly audible.
+  /// Strategy: try EVERY candidate voice of the requested gender until the
+  /// engine accepts one, then apply a strong pitch layer on top so the
+  /// male/female switch is always clearly audible even when the engine has
+  /// only a single voice installed.
   Future<void> _applyVoice() async {
     if (_currentGender == VoiceGender.auto) {
       _activePitch = 1.0;
@@ -251,31 +254,22 @@ class TtsService {
       await refreshVoices();
     }
 
-    final match = _pickVoice(_currentGender);
     var applied = false;
-    if (match != null) {
-      try {
-        try {
-          await _tts.setLanguage('en-US');
-        } catch (_) {}
-        if (Platform.isAndroid) {
-          await _tts.setVoice({'name': match.name, 'locale': match.locale});
-        } else {
-          await _tts.setVoice({'name': match.name, 'language': match.locale});
-        }
+    final candidates = _candidatesFor(_currentGender);
+    for (final voice in candidates.take(5)) {
+      if (await _tryApplyVoice(voice)) {
         applied = true;
-        activeVoiceName.value = match.name;
-      } catch (_) {
-        try {
-          await _tts.setLanguage('en-US');
-        } catch (_) {}
+        _lastWorkingVoice[_currentGender] = voice.name;
+        activeVoiceName.value = voice.name;
+        debugOnlyLog('TTS applied voice: ${voice.name}');
+        break;
       }
     }
 
-    // Natural pitch per gender; strongly emphasised when only the fallback
-    // path is available so the change remains clearly audible.
-    final natural = _currentGender == VoiceGender.male ? 0.80 : 1.20;
-    _activePitch = applied ? natural : (natural == 1.20 ? 1.30 : 0.70);
+    // Strong pitch per gender: this is the guaranteed-audible layer that
+    // works even when the engine exposes a single English voice.
+    final natural = _currentGender == VoiceGender.male ? 0.65 : 1.40;
+    _activePitch = applied ? natural : (natural == 1.40 ? 1.50 : 0.55);
     try {
       await _tts.setPitch(_activePitch);
     } catch (_) {}
@@ -285,34 +279,46 @@ class TtsService {
     }
   }
 
-  AvailableVoice? _pickVoice(VoiceGender gender) {
-    final exact =
-        _available.where((v) => v.gender == gender).toList();
-    if (exact.isNotEmpty) {
-      // Prefer a voice that actually differs from the last applied one so
-      // toggling gender never silently re-uses the same engine voice.
-      final different =
-          exact.where((v) => v.name != _lastAppliedVoiceName).toList();
-      final chosen = (different.isNotEmpty ? different : exact).first;
-      _lastAppliedVoiceName = chosen.name;
-      return chosen;
+  final Map<VoiceGender, String> _lastWorkingVoice = {};
+
+  /// Ordered candidate voices: previously-working voice first, then all
+  /// voices of the requested gender, then any other voice than the last
+  /// applied one.
+  List<AvailableVoice> _candidatesFor(VoiceGender gender) {
+    final preferred = _lastWorkingVoice[gender];
+    int rank(AvailableVoice v) {
+      if (preferred != null && v.name == preferred) return 0;
+      if (v.gender == gender) return 1;
+      return 2;
     }
-    // Safe fallback: any available en-US voice that differs from the last
-    // applied voice, preferring undetected-gender ones.
-    final neutral = _available
-        .where((v) => v.gender == VoiceGender.auto && v.name != _lastAppliedVoiceName)
-        .toList();
-    if (neutral.isNotEmpty) {
-      _lastAppliedVoiceName = neutral.first.name;
-      return neutral.first;
+
+    final sorted = [..._available]..sort((a, b) {
+        final r = rank(a) - rank(b);
+        if (r != 0) return r;
+        return a.name.compareTo(b.name);
+      });
+    if (_lastAppliedVoiceName.isEmpty || sorted.length <= 1) return sorted;
+    // When switching genders make sure the top candidate differs from the
+    // currently applied voice whenever possible.
+    final rotated = [
+      ...sorted.where((v) => v.name != _lastAppliedVoiceName),
+      ...sorted.where((v) => v.name == _lastAppliedVoiceName),
+    ];
+    return rotated;
+  }
+
+  Future<bool> _tryApplyVoice(AvailableVoice voice) async {
+    try {
+      await _tts.setLanguage(voice.locale == 'en' ? 'en-US' : voice.locale);
+      final params = Platform.isAndroid
+          ? {'name': voice.name, 'locale': voice.rawLocale}
+          : {'name': voice.name, 'language': voice.rawLocale};
+      await _tts.setVoice(params);
+      _lastAppliedVoiceName = voice.name;
+      return true;
+    } catch (_) {
+      return false;
     }
-    final anyOther =
-        _available.where((v) => v.name != _lastAppliedVoiceName).toList();
-    if (anyOther.isNotEmpty) {
-      _lastAppliedVoiceName = anyOther.first.name;
-      return anyOther.first;
-    }
-    return _available.isEmpty ? null : _available.first;
   }
 
   VoiceGender _detectGender(String lowerName) {
@@ -341,15 +347,14 @@ class TtsService {
       final map = (v is Map) ? Map<String, dynamic>.from(v) : null;
       if (map == null) continue;
       final name = (map['name'] ?? '').toString();
-      final locale = ((map['locale'] ?? map['language']) ?? '')
-          .toString()
-          .toLowerCase()
-          .replaceAll('_', '-');
+      final rawLocale = ((map['locale'] ?? map['language']) ?? '').toString();
+      final locale = rawLocale.toLowerCase().replaceAll('_', '-');
       if (name.isEmpty || !locale.startsWith('en')) continue;
       out.add(
         AvailableVoice(
           name: name,
           locale: locale.startsWith('en-us') ? 'en-US' : 'en',
+          rawLocale: rawLocale,
           gender: _detectGender(name.toLowerCase()),
         ),
       );

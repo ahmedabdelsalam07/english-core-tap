@@ -8,6 +8,7 @@ import '../../core/theme/app_radius.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/history_provider.dart';
+import '../../providers/services_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../widgets/language_switcher.dart';
 import '../../widgets/section_card.dart';
@@ -62,27 +63,77 @@ class SettingsScreen extends ConsumerWidget {
           _SettingsSection(
             title: l10n.settingsDefaultVoice,
             icon: Icons.record_voice_over_outlined,
-            child: SegmentedButton<VoiceGender>(
-              segments: [
-                ButtonSegment(
-                  value: VoiceGender.auto,
-                  label: Text(l10n.settingsAuto),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SegmentedButton<VoiceGender>(
+                  segments: [
+                    ButtonSegment(
+                      value: VoiceGender.auto,
+                      label: Text(l10n.settingsAuto),
+                    ),
+                    ButtonSegment(
+                      value: VoiceGender.male,
+                      label: Text(l10n.settingsMale),
+                      icon: const Icon(Icons.male, size: 16),
+                    ),
+                    ButtonSegment(
+                      value: VoiceGender.female,
+                      label: Text(l10n.settingsFemale),
+                      icon: const Icon(Icons.female, size: 16),
+                    ),
+                  ],
+                  selected: {settings.defaultVoice},
+                  showSelectedIcon: false,
+                  onSelectionChanged: (s) =>
+                      controller.setDefaultVoice(s.first),
                 ),
-                ButtonSegment(
-                  value: VoiceGender.male,
-                  label: Text(l10n.settingsMale),
-                  icon: const Icon(Icons.male, size: 16),
-                ),
-                ButtonSegment(
-                  value: VoiceGender.female,
-                  label: Text(l10n.settingsFemale),
-                  icon: const Icon(Icons.female, size: 16),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ValueListenableBuilder<String>(
+                        valueListenable:
+                            ref.watch(ttsServiceProvider).activeVoiceName,
+                        builder: (context, name, __) => Text(
+                          name.isEmpty ? '—' : '🔊 $name',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textDirection: TextDirection.ltr,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: palette.textSoft,
+                          ),
+                        ),
+                      ),
+                    ),
+                    IconButton.filledTonal(
+                      tooltip: l10n.resultPlay,
+                      onPressed: () async {
+                        final messenger =
+                            ScaffoldMessenger.of(context);
+                        try {
+                          await ref
+                              .read(ttsServiceProvider)
+                              .speak(
+                                'Hello, this is my English Core voice.',
+                                gender: settings.defaultVoice,
+                                speed: settings.playbackSpeed,
+                              );
+                        } catch (_) {
+                          messenger
+                            ..hideCurrentSnackBar()
+                            ..showSnackBar(
+                              SnackBar(content: Text(l10n.ttsError)),
+                            );
+                        }
+                      },
+                      icon: Icon(Icons.play_arrow_rounded,
+                          size: 22, color: palette.primary),
+                    ),
+                  ],
                 ),
               ],
-              selected: {settings.defaultVoice},
-              showSelectedIcon: false,
-              onSelectionChanged: (s) =>
-                  controller.setDefaultVoice(s.first),
             ),
           ),
           const SizedBox(height: 16),
