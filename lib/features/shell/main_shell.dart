@@ -81,10 +81,12 @@ class MainShell extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            child: const Icon(
-                              Icons.record_voice_over_rounded,
-                              color: Colors.white,
-                              size: 28,
+                            child: Padding(
+                              padding: const EdgeInsets.all(11),
+                              child: Image.asset(
+                                'assets/logo/logo_transparent.png',
+                                fit: BoxFit.contain,
+                              ),
                             ),
                           ),
                         ),
