@@ -89,6 +89,16 @@ class UpdateService {
     );
   }
 
+  /// Only update URLs pointing at THIS repository's GitHub releases are
+  /// trusted. Anything else (a tampered API response, a mirror, a redirect
+  /// service) must never be opened — it could deliver a malicious APK.
+  static bool isTrustedReleaseUrl(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null || uri.scheme != 'https') return false;
+    if (uri.host != 'github.com') return false;
+    return uri.path.startsWith('/${Constants.githubRepo}/releases/');
+  }
+
   /// Applies the update for the current platform.
   Future<bool> applyUpdate(UpdateInfo info) async {
     if (kIsWeb) {
@@ -97,14 +107,18 @@ class UpdateService {
       await unregisterServiceWorkersAndClearCaches();
       return true;
     }
+    const releasesPage =
+        'https://github.com/${Constants.githubRepo}/releases';
     if (Platform.isAndroid && info.apkUrl != null) {
       return launchUrl(
-        Uri.parse(info.apkUrl!),
+        Uri.parse(isTrustedReleaseUrl(info.apkUrl!) ? info.apkUrl! : releasesPage),
         mode: LaunchMode.externalApplication,
       );
     }
     return launchUrl(
-      Uri.parse(info.releaseUrl),
+      Uri.parse(isTrustedReleaseUrl(info.releaseUrl)
+          ? info.releaseUrl
+          : releasesPage),
       mode: LaunchMode.externalApplication,
     );
   }

@@ -67,3 +67,8 @@ users.csv
 **/ios/**/Flutter/App.framework
 **/ios/**/Flutter/Flutter.framework
 **/ios/**/Flutter/flutter_assets/
+# Release signing (never commit these)
+android/key.properties
+android/app/release-key.jks
+*.jks
+*.keystore
