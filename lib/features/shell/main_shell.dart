@@ -84,7 +84,7 @@ class MainShell extends StatelessWidget {
                             child: Padding(
                               padding: const EdgeInsets.all(11),
                               child: Image.asset(
-                                'assets/logo/logo_transparent.png',
+                                'assets/logo/heart_transparent.png',
                                 fit: BoxFit.contain,
                               ),
                             ),
