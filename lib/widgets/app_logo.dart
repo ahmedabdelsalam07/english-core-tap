@@ -3,7 +3,11 @@ import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
 
-/// Displays the official ENGLISH CORE logo (real asset, aspect-ratio kept).
+/// Natural width/height ratio of the transparent logo asset
+/// (assets/logo/logo_transparent.png = 1400x718).
+const double kLogoAspectRatio = 1400 / 718;
+
+/// The official ENGLISH CORE logo (transparent, no name/number baked in).
 class AppLogo extends StatelessWidget {
   final double width;
   final bool showText;
@@ -12,12 +16,12 @@ class AppLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = AppPalette.of(context);
-    final height = width * 600 / 1000; // natural ratio of the logo asset
+    final height = width / kLogoAspectRatio;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Image.asset(
-          'assets/logo/english_core_tap.png',
+          'assets/logo/logo_transparent.png',
           width: width,
           height: height,
           fit: BoxFit.contain,
@@ -50,7 +54,7 @@ class AppLogo extends StatelessWidget {
   }
 }
 
-/// The complete personal logo (symbol + name) used on onboarding slide 3.
+/// The complete personal logo used on onboarding slide 3.
 class FullLogo extends StatelessWidget {
   final double width;
   const FullLogo({super.key, this.width = 220});
@@ -58,9 +62,9 @@ class FullLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Image.asset(
-      'assets/logo/english_core_tap.png',
+      'assets/logo/logo_transparent.png',
       width: width,
-      height: width * 600 / 1000,
+      height: width / kLogoAspectRatio,
       fit: BoxFit.contain,
       errorBuilder: (_, __, ___) => Icon(
         Icons.record_voice_over_rounded,
@@ -71,7 +75,8 @@ class FullLogo extends StatelessWidget {
   }
 }
 
-/// LOGO ONLY — the square brand symbol without any name/number text.
+/// LOGO ONLY — the transparent brand symbol without any name/number text.
+/// [size] is the rendered HEIGHT; width follows the natural asset ratio.
 /// Used in the header, splash screen and anywhere "logo only" is required.
 class LogoMark extends StatelessWidget {
   final double size;
@@ -80,9 +85,9 @@ class LogoMark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Image.asset(
-      'assets/logo/app_icon_1024.png',
-      width: size,
+      'assets/logo/logo_transparent.png',
       height: size,
+      width: size * kLogoAspectRatio,
       fit: BoxFit.contain,
       errorBuilder: (_, __, ___) => Icon(
         Icons.record_voice_over_rounded,

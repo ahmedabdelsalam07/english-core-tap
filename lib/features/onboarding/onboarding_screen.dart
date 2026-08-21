@@ -60,6 +60,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 itemCount: 3,
                 onPageChanged: (i) => setState(() => _page = i),
                 itemBuilder: (context, index) {
+                  // Slide 1 is a complete top-to-bottom design — rendered
+                  // full-bleed with no extra text on top of it.
+                  if (index == 0) return const _FullDesignSlide();
                   return LayoutBuilder(
                     builder: (context, constraints) {
                       return SingleChildScrollView(
@@ -136,16 +139,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Widget _buildSlide(int index, AppLocalizations l10n, AppPalette palette) {
     switch (index) {
-      case 0:
-        return _SlideScaffold(
-          visual: _GirlImage(),
-          title: l10n.onboardingTitle1,
-          subtitle: l10n.onboardingSub1,
-          palette: palette,
-        );
       case 1:
         return _SlideScaffold(
-          visual: _SafeHeart(),
+          visual: const _SafeHeart(),
           title: l10n.onboardingTitle2,
           subtitle: l10n.onboardingSub2,
           palette: palette,
@@ -153,6 +149,37 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       default:
         return _BrandSlide(palette: palette);
     }
+  }
+}
+
+/// Slide 1 — the complete ready-made design (girl artwork with its own
+/// baked-in text), shown edge-to-edge on its native black background.
+class _FullDesignSlide extends StatelessWidget {
+  const _FullDesignSlide();
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Container(
+          width: double.infinity,
+          height: constraints.maxHeight,
+          color: Colors.black,
+          child: Center(
+            child: Image.asset(
+              'assets/images/onboarding_girl.jpeg',
+              fit: BoxFit.contain,
+              height: constraints.maxHeight,
+              errorBuilder: (_, __, ___) => Icon(
+                Icons.face_retouching_natural_rounded,
+                size: 120,
+                color: AppPalette.of(context).primary,
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 }
 
@@ -198,79 +225,20 @@ class _SlideScaffold extends StatelessWidget {
   }
 }
 
-/// Slide 1 — the app's own cartoon girl image, clean and professional.
-class _GirlImage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: AppRadius.xl,
-        border: Border.all(color: AppPalette.of(context).divider),
-      ),
-      child: ClipRRect(
-        borderRadius: AppRadius.lg,
-        child: Image.asset(
-          'assets/images/onboarding_girl.jpeg',
-          height: 300,
-          fit: BoxFit.contain,
-          errorBuilder: (_, __, ___) => SizedBox(
-            height: 300,
-            child: Icon(
-              Icons.face_retouching_natural_rounded,
-              size: 120,
-              color: AppPalette.of(context).primary,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Slide 2 — a prominent heart that communicates safety/security.
+/// Slide 2 — the official heart logo (transparent asset).
 class _SafeHeart extends StatelessWidget {
+  const _SafeHeart();
+
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 190,
-      height: 190,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: AppColors.danger.withOpacity(0.08),
-          border: Border.all(color: AppColors.danger.withOpacity(0.18)),
-        ),
-        child: Center(
-          child: Container(
-            width: 130,
-            height: 130,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.danger,
-                  AppColors.danger.withOpacity(0.75)
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.danger.withOpacity(0.35),
-                  blurRadius: 24,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.favorite_rounded,
-              color: Colors.white,
-              size: 64,
-            ),
-          ),
-        ),
+    return Image.asset(
+      'assets/images/onboarding_heart.png',
+      height: 280,
+      fit: BoxFit.contain,
+      errorBuilder: (_, __, ___) => const Icon(
+        Icons.favorite_rounded,
+        size: 160,
+        color: AppColors.danger,
       ),
     );
   }
@@ -287,7 +255,7 @@ class _BrandSlide extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const FullLogo(width: 230),
+        const FullLogo(width: 330),
         const SizedBox(height: 22),
         Text(
           l10n.onboardingBrandAr,
