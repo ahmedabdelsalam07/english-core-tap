@@ -71,20 +71,61 @@ void main() {
     tts.dispose();
   });
 
-  test('underscore locale (Samsung style) is accepted and passed raw',
+  test('web-style voices (browser names) are detected and locale key sent',
       () async {
     engineVoices = [
-      {'name': 'eng-USA-female', 'locale': 'en_US'},
+      {'name': 'Microsoft David - English (United States)', 'locale': 'en-US'},
+      {'name': 'Microsoft Zira - English (United States)', 'locale': 'en-US'},
+      {'name': 'Google US English', 'locale': 'en-US'},
     ];
     final tts = TtsService();
     await tts.init();
 
+    await tts.speak('hi', gender: VoiceGender.male, speed: 1.0);
+    expect(lastVoiceName, 'Microsoft David - English (United States)',
+        reason: 'David must be detected as male');
+    // flutter_tts web reads ONLY the "locale" key — it must always be sent.
+    expect(lastVoiceLocaleKey, 'en-US');
+
     await tts.speak('hi', gender: VoiceGender.female, speed: 1.0);
-    expect(lastVoiceName, 'eng-USA-female',
-        reason: 'en_US locale must not be filtered out');
-    expect(lastVoiceLocaleKey, 'en_US',
-        reason: 'raw locale must be sent back to the engine unchanged');
-    expect(lastPitch!, greaterThan(1.0));
+    expect(
+        lastVoiceName, 'Microsoft Zira - English (United States)',
+        reason: 'Zira must win over undetected Google US English');
+    tts.dispose();
+  });
+
+  test('setVoice sends both locale and language keys with raw value',
+      () async {
+    engineVoices = [
+      {'name': 'eng-USA-female', 'locale': 'en_US'},
+    ];
+    String? localeKey;
+    String? languageKey;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      switch (call.method) {
+        case 'getVoices':
+          return engineVoices;
+        case 'setVoice':
+          final args = Map<String, dynamic>.from(call.arguments as Map);
+          lastVoiceName = args['name'] as String?;
+          localeKey = args['locale'] as String?;
+          languageKey = args['language'] as String?;
+          return 1;
+        case 'setPitch':
+          lastPitch = (call.arguments as num?)?.toDouble();
+          return 1;
+        default:
+          return 1;
+      }
+    });
+    final tts = TtsService();
+    await tts.init();
+
+    await tts.speak('hi', gender: VoiceGender.female, speed: 1.0);
+    expect(localeKey, 'en_US',
+        reason: 'Android + web read "locale"');
+    expect(languageKey, 'en_US', reason: 'iOS reads "language"');
     tts.dispose();
   });
 

@@ -63,6 +63,10 @@ class TtsService {
     '-iom', 'iob', 'tpd', 'tpc', 'tpb', 'g-d', 'rda',
     'fred', 'aaron', 'daniel', 'alex', 'nathan', 'gordon', 'thomas',
     'andrew', 'ravi', 'reed', 'rocko', 'grandpa', 'eddy',
+    // Chrome / Edge / Safari browser voices
+    'david', 'mark', 'guy', 'james', 'ryan', 'george', 'william',
+    'eric', 'christopher', 'roger', 'brian', 'matthew', 'joey',
+    'justin', 'kevin', 'arthur',
   ];
   static const List<String> _femaleHints = [
     'iol', 'iac', 'iuf', 'sfg', 'sfd', 'sfc', 'sfx', 'sfb', 'tpf', 'rmc',
@@ -70,6 +74,10 @@ class TtsService {
     'samantha', 'karen', 'moira', 'tessa', 'zira', 'susan', 'serena',
     'katya', 'ava', 'aria', 'ana', 'allison', 'nico', 'ellen', 'grandma',
     'shelley', 'sandy', 'flo',
+    // Chrome / Edge / Safari browser voices
+    'hazel', 'jenny', 'libby', 'clara', 'olivia', 'joanna', 'kendra',
+    'kimberly', 'salli', 'ivy', 'nicole', 'emma', 'amy', 'sonia',
+    'michelle', 'natasha', 'sonya', 'elsa', 'maria', 'linda', 'heather',
   ];
 
   Future<void> init() async {
@@ -158,6 +166,16 @@ class TtsService {
     _currentGender = gender;
     if (speed != null) _currentSpeed = speed;
     await stop();
+    if (kIsWeb) {
+      // flutter_tts web silently DROPS speak() while its internal state is
+      // still "playing" — cancel() fires onEnd asynchronously (or not at
+      // all in some browsers). Speaking a blank utterance forces onEnd to
+      // fire, resetting the state so the real utterance is not dropped.
+      try {
+        await _tts.speak(' ');
+        await Future<void>.delayed(const Duration(milliseconds: 150));
+      } catch (_) {}
+    }
     try {
       await _tts.setLanguage('en-US');
       await _applyRate();
@@ -308,10 +326,15 @@ class TtsService {
   Future<bool> _tryApplyVoice(AvailableVoice voice) async {
     try {
       await _tts.setLanguage(voice.locale == 'en' ? 'en-US' : voice.locale);
-      final params = Platform.isAndroid
-          ? {'name': voice.name, 'locale': voice.rawLocale}
-          : {'name': voice.name, 'language': voice.rawLocale};
-      await _tts.setVoice(params);
+      // Each platform implementation reads its own key:
+      //  - Android / web: "name" + "locale"
+      //  - iOS / macOS:   "name" + "language"
+      // Sending all keys keeps one universal code path; extras are ignored.
+      await _tts.setVoice({
+        'name': voice.name,
+        'locale': voice.rawLocale,
+        'language': voice.rawLocale,
+      });
       _lastAppliedVoiceName = voice.name;
       return true;
     } catch (_) {
