@@ -102,8 +102,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     Center(
                       child: Image.asset(
                         'assets/logo/logo_transparent.png',
-                        width: 240,
-                        height: 240 / kLogoAspectRatio,
+                        width: 170,
+                        height: 170 / kLogoAspectRatio,
                         fit: BoxFit.contain,
                         errorBuilder: (_, __, ___) => const Icon(
                           Icons.record_voice_over_rounded,

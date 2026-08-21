@@ -101,11 +101,19 @@ class FirebaseAuthService implements AuthService {
   }
 }
 
-/// Display name derived from the account email (the part before '@').
+/// Display name shown in the header: the FIRST part of the email local-part,
+/// capitalized ("tharwat.tawfiq@x.com" → "Tharwat").
 String usernameFrom(User user) {
   final email = user.email;
   if (email == null || email.isEmpty) return user.uid;
-  return email.split('@').first;
+  final localPart = email.split('@').first;
+  final first = localPart
+      .split(RegExp(r'[._\-\s+0-9]+'))
+      .where((p) => p.isNotEmpty)
+      .toList();
+  if (first.isEmpty) return localPart;
+  final name = first.first;
+  return name[0].toUpperCase() + name.substring(1).toLowerCase();
 }
 
 AppException mapAuthError(FirebaseAuthException e) {

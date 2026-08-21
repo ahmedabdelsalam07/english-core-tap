@@ -232,7 +232,10 @@ class _HistoryTile extends ConsumerWidget {
               ),
               IconButton(
                 tooltip: l10n.resultPlay,
-                onPressed: () => tts.speak(entry.englishText),
+                onPressed: () => tts.speak(
+                  entry.englishText,
+                  gender: ref.read(settingsControllerProvider).defaultVoice,
+                ),
                 icon: Icon(Icons.play_circle_outline_rounded,
                     color: palette.primary, size: 22),
               ),

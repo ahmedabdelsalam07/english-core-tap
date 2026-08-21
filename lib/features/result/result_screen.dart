@@ -508,13 +508,13 @@ onTap: () async {
                       await tts.pause();
                     } else if (paused) {
                       await tts.resume();
-                    } else {
-                      await tts.speak(
-                        widget.text,
-                        gender: widget.voice,
-                        speed: _speed,
-                      );
-                    }
+                     } else {
+                       await tts.speak(
+                         widget.text,
+                         gender: ref.read(settingsControllerProvider).defaultVoice,
+                         speed: _speed,
+                       );
+                     }
                   } catch (_) {
                     if (mounted) {
                       messenger
