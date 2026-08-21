@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -614,14 +615,21 @@ class _Waveform extends StatefulWidget {
 class _WaveformState extends State<_Waveform>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
-  static const int _bars = 24;
+  static const int _bars = 30;
+  // Per-bar random phase + speed so the wave looks organic, like a real
+  // audio level meter (WhatsApp-style), instead of bars moving in sync.
+  late final List<double> _phases;
+  late final List<double> _speeds;
 
   @override
   void initState() {
     super.initState();
+    final rnd = math.Random(11);
+    _phases = List.generate(_bars, (_) => rnd.nextDouble() * 2 * math.pi);
+    _speeds = List.generate(_bars, (_) => 0.55 + rnd.nextDouble() * 1.0);
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 1500),
     );
     if (widget.active) _controller.repeat();
   }
@@ -643,6 +651,14 @@ class _WaveformState extends State<_Waveform>
     super.dispose();
   }
 
+  double _level(int i) {
+    final t = _controller.value * 2 * math.pi;
+    final v = (math.sin(t * _speeds[i] + _phases[i]).abs() * 0.7 +
+            math.sin(t * _speeds[i] * 2.3 + _phases[i] * 1.7).abs() * 0.3)
+        .clamp(0.0, 1.0);
+    return (0.15 + 0.85 * math.pow(v, 1.4)).clamp(0.12, 1.0).toDouble();
+  }
+
   @override
   Widget build(BuildContext context) {
     final palette = AppPalette.of(context);
@@ -650,19 +666,17 @@ class _WaveformState extends State<_Waveform>
       animation: _controller,
       builder: (context, _) {
         return SizedBox(
-          height: 40,
+          height: 44,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: List.generate(_bars, (i) {
-              final animated = widget.active
-                  ? 0.35 + 0.65 * ((i.isEven ? _controller.value : 1 - _controller.value))
-                  : 0.3 + 0.4 * ((i * 7919) % 5) / 5;
+              final animated = widget.active ? _level(i) : 0.10 + (i % 3) * 0.04;
               final passed = (i + 1) / _bars <= widget.progress;
               return Container(
-                width: 4,
-                height: 40 * animated,
-                margin: const EdgeInsets.symmetric(horizontal: 2),
+                width: 3.5,
+                height: 44 * animated,
+                margin: const EdgeInsets.symmetric(horizontal: 1.5),
                 decoration: BoxDecoration(
                   color:
                       passed ? palette.primary : palette.divider,

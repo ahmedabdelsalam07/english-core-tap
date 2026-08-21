@@ -76,8 +76,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     opacity: _controller,
                     child: const Column(
                       children: [
-                        // LOGO ONLY — large, original aspect ratio preserved.
-                        LogoMark(size: 230),
+                        // LOGO ONLY — original aspect ratio preserved.
+                        LogoMark(size: 140),
                         SizedBox(height: 30),
                         Text(
                           'English Core',
