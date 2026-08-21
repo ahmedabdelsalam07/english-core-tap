@@ -43,6 +43,7 @@ class TtsService {
   String _currentText = '';
   double _currentSpeed = 1.0;
   VoiceGender _currentGender = VoiceGender.auto;
+  String _lastAppliedVoiceName = '';
   double _activePitch = 1.0;
   bool get _isPauseSupported => Platform.isIOS;
   Timer? _progressTimer;
@@ -221,8 +222,9 @@ class TtsService {
 
   /// Resolves and applies the closest matching voice for [_currentGender].
   ///
-  /// Fallback chain: exact gender → any en-US voice → system default with a
-  /// pitch-based differentiation so the selection is always audible.
+  /// Fallback chain: exact gender → a different en-US voice than the one
+  /// already applied → system default. A strong pitch differentiation
+  /// guarantees the male/female switch is always clearly audible.
   Future<void> _applyVoice() async {
     if (_currentGender == VoiceGender.auto) {
       _activePitch = 1.0;
@@ -237,6 +239,9 @@ class TtsService {
     var applied = false;
     if (match != null) {
       try {
+        try {
+          await _tts.setLanguage('en-US');
+        } catch (_) {}
         if (Platform.isAndroid) {
           await _tts.setVoice({'name': match.name, 'locale': 'en-US'});
         } else {
@@ -251,10 +256,10 @@ class TtsService {
       }
     }
 
-    // Natural pitch per gender; slightly emphasised when only the fallback
+    // Natural pitch per gender; strongly emphasised when only the fallback
     // path is available so the change remains clearly audible.
-    final natural = _currentGender == VoiceGender.male ? 0.85 : 1.15;
-    _activePitch = applied ? natural : (natural == 1.15 ? 1.25 : 0.75);
+    final natural = _currentGender == VoiceGender.male ? 0.80 : 1.20;
+    _activePitch = applied ? natural : (natural == 1.20 ? 1.30 : 0.70);
     try {
       await _tts.setPitch(_activePitch);
     } catch (_) {}
@@ -267,12 +272,30 @@ class TtsService {
   AvailableVoice? _pickVoice(VoiceGender gender) {
     final exact =
         _available.where((v) => v.gender == gender).toList();
-    if (exact.isNotEmpty) return exact.first;
-    // Safe fallback: any available en-US voice (prefer undetected-gender
-    // ones before the opposite gender).
-    final neutral =
-        _available.where((v) => v.gender == VoiceGender.auto).toList();
-    if (neutral.isNotEmpty) return neutral.first;
+    if (exact.isNotEmpty) {
+      // Prefer a voice that actually differs from the last applied one so
+      // toggling gender never silently re-uses the same engine voice.
+      final different =
+          exact.where((v) => v.name != _lastAppliedVoiceName).toList();
+      final chosen = (different.isNotEmpty ? different : exact).first;
+      _lastAppliedVoiceName = chosen.name;
+      return chosen;
+    }
+    // Safe fallback: any available en-US voice that differs from the last
+    // applied voice, preferring undetected-gender ones.
+    final neutral = _available
+        .where((v) => v.gender == VoiceGender.auto && v.name != _lastAppliedVoiceName)
+        .toList();
+    if (neutral.isNotEmpty) {
+      _lastAppliedVoiceName = neutral.first.name;
+      return neutral.first;
+    }
+    final anyOther =
+        _available.where((v) => v.name != _lastAppliedVoiceName).toList();
+    if (anyOther.isNotEmpty) {
+      _lastAppliedVoiceName = anyOther.first.name;
+      return anyOther.first;
+    }
     return _available.isEmpty ? null : _available.first;
   }
 

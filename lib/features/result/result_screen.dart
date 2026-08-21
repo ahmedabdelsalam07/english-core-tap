@@ -213,6 +213,25 @@ class _EnglishSection extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           _VoiceSelector(voice: voice, onChanged: onVoiceChanged),
+          const SizedBox(height: 4),
+          ValueListenableBuilder<String>(
+            valueListenable: ref.watch(ttsServiceProvider).activeVoiceName,
+            builder: (context, name, __) => name.isEmpty
+                ? const SizedBox.shrink()
+                : Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      '🔊 $name',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textDirection: TextDirection.ltr,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: AppPalette.of(context).textSoft,
+                      ),
+                    ),
+                  ),
+          ),
           const SizedBox(height: 14),
           AudioPlayerWidget(
             key: ValueKey('${result.englishText}_${result.voice.name}_'

@@ -33,6 +33,20 @@ void main() {
     expect(service.toArabicPhonetic('   '), '');
   });
 
+  test('nurse vowels keep their vowel sound (earth, work)', () {
+    // earth /ɜːrθ/ -> أَرث (not رث)
+    expect(service.toArabicPhonetic('earth'), 'أَرث');
+    expect(service.toArabicPhonetic('earth science'), contains('أَرث'));
+    expect(service.toArabicPhonetic('earth science'), contains('ساي'));
+    // work /wɝk/ -> وارك (not رك)
+    expect(service.toArabicPhonetic('work'), 'وارك');
+  });
+
+  test('science family uses the sayn form', () {
+    expect(service.toArabicPhonetic('science'), 'سايْنس');
+    expect(service.toArabicPhonetic('scientist'), 'سايْنتِست');
+  });
+
   test('grapheme-to-IPA engine emits consonants', () {
     final ipa = service.graphemeToIpa('cat');
     expect(ipa, contains('æ'));

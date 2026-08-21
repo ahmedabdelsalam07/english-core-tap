@@ -267,6 +267,13 @@ class ArabicPhoneticService {
         i += 2;
         continue;
       }
+      // earth / early / earn: "ear"+consonant = nurse vowel, not iːr
+      if (s3 == 'ear' &&
+          !(i + 3 < n && 'aeiou'.contains(w[i + 3]))) {
+        out.write('ɝ');
+        i += 2;
+        continue;
+      }
       if (s2 == 'ea') {
         out.write('iː');
         i += 2;
@@ -440,6 +447,13 @@ class ArabicPhoneticService {
     'hey': 'هي',
     'world': 'وورلد',
     'school': 'سكول',
+    'earth': 'أَرث',
+    'earth science': 'أَرث سايْنس',
+    'science': 'سايْنس',
+    'sciences': 'سايْنسِز',
+    'scientist': 'سايْنتِست',
+    'scientists': 'سايْنتِستس',
+    'scientific': 'سايْنتِفِك',
     'apple': 'أَبل',
     'america': 'أمريكا',
     'american': 'أمريكن',
@@ -548,7 +562,7 @@ class ArabicPhoneticService {
     'read': 'ريد',
     'write': 'رايت',
     'learn': 'ليرن',
-    'work': 'ويرك',
+    'work': 'وارك',
     'play': 'بلاي',
     'study': 'ستادي',
     'travel': 'ترافل',
@@ -631,10 +645,10 @@ class ArabicPhoneticService {
     'eː': 'ي',
     'oː': 'و',
     'ɚ': 'ر',
-    'ɝ': 'ر',
-    'ɝː': 'ر',
+    'ɝ': 'أَر',
+    'ɝː': 'أَر',
     'ər': 'ر',
-    'ɜr': 'ر',
+    'ɜr': 'أَر',
     'ɑr': 'ار',
     'ɔr': 'ور',
     'ʊr': 'ور',
@@ -669,6 +683,7 @@ class ArabicPhoneticService {
     final tokens = _tokenizeIpa(s);
     final buffer = StringBuffer();
     var prevWasConsonant = false;
+    var prevWasVowelOutput = false;
     for (final t in tokens) {
       final consonant = _consonants[t];
       if (consonant != null) {
@@ -679,22 +694,29 @@ class ArabicPhoneticService {
             : consonant;
         if (!(base.length == 1 && last == base)) buffer.write(base);
         prevWasConsonant = true;
+        prevWasVowelOutput = false;
         continue;
       }
       final shortD = _shortVowelDiacritic[t];
       if (shortD != null) {
+        // A reduced vowel directly after a full vowel/diphthong (aɪ.ə,
+        // eɪ.ə) is a glide — dropping it yields the natural Arabic form
+        // (science /ˈsaɪəns/ -> ساينس, not سايأُنس).
+        if (prevWasVowelOutput) continue;
         if (prevWasConsonant && buffer.isNotEmpty) {
           buffer.write(shortD);
         } else {
           buffer.write(_wordInitialShort[t] ?? 'أَ');
         }
         prevWasConsonant = false;
+        prevWasVowelOutput = true;
         continue;
       }
       final longL = _longVowelLetter[t];
       if (longL != null) {
         buffer.write(longL);
         prevWasConsonant = false;
+        prevWasVowelOutput = true;
       }
     }
     return buffer.toString();
