@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/enums.dart';
 import '../data/models/app_settings.dart';
 import '../data/services/settings_repository.dart';
+import 'services_provider.dart';
 
 /// Repository provider.
 final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
@@ -21,7 +22,16 @@ class SettingsController extends Notifier<AppSettings> {
   }
 
   Future<void> _load() async {
-    state = await _repo.load();
+    final loaded = await _repo.load();
+    state = loaded;
+    // Push restored preferences into the TTS engine so playback uses them
+    // from the very first utterance.
+    try {
+      await ref.read(ttsServiceProvider).applySettings(
+            gender: loaded.defaultVoice,
+            speed: loaded.playbackSpeed,
+          );
+    } catch (_) {}
   }
 
   Future<void> _persist(AppSettings next) async {
@@ -29,17 +39,29 @@ class SettingsController extends Notifier<AppSettings> {
     await _repo.save(next);
   }
 
+  /// Theme/locale only affect MaterialApp — no router refresh, so the user
+  /// stays exactly where they are.
   Future<void> setThemeMode(AppThemeMode mode) =>
       _persist(state.copyWith(themeMode: mode));
 
   Future<void> setLocale(AppLocale locale) =>
       _persist(state.copyWith(locale: locale));
 
-  Future<void> setDefaultVoice(voice) =>
-      _persist(state.copyWith(defaultVoice: voice));
+  /// Applies the voice to the TTS engine immediately and persists it.
+  Future<void> setDefaultVoice(VoiceGender voice) async {
+    await _persist(state.copyWith(defaultVoice: voice));
+    try {
+      await ref.read(ttsServiceProvider).setGender(voice);
+    } catch (_) {}
+  }
 
-  Future<void> setPlaybackSpeed(double speed) =>
-      _persist(state.copyWith(playbackSpeed: speed));
+  /// Applies the speed to the TTS engine immediately and persists it.
+  Future<void> setPlaybackSpeed(double speed) async {
+    await _persist(state.copyWith(playbackSpeed: speed));
+    try {
+      await ref.read(ttsServiceProvider).setSpeed(speed);
+    } catch (_) {}
+  }
 
   Future<void> setShowArabicPhonetic(bool value) =>
       _persist(state.copyWith(showArabicPhonetic: value));

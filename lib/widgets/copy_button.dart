@@ -21,7 +21,11 @@ class CopyButton extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     return IconButton(
       tooltip: l10n.resultCopy,
-      icon: Icon(icon, size: 20, color: color ?? AppColors.textSoft),
+      icon: Icon(
+        icon,
+        size: 20,
+        color: color ?? AppPalette.of(context).textSoft,
+      ),
       onPressed: () async {
         await Clipboard.setData(ClipboardData(text: text));
         if (context.mounted) {

@@ -18,6 +18,7 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final palette = AppPalette.of(context);
     final settings = ref.watch(settingsControllerProvider);
     final auth = ref.watch(authControllerProvider);
     final user = auth.valueOrNull;
@@ -100,11 +101,11 @@ class SettingsScreen extends ConsumerWidget {
                     labelStyle: TextStyle(
                       color: settings.playbackSpeed == s
                           ? Colors.white
-                          : AppColors.primary,
+                          : palette.primary,
                       fontWeight: FontWeight.w700,
                     ),
                     selectedColor: AppColors.primary,
-                    backgroundColor: AppColors.lavender,
+                    backgroundColor: palette.surfaceAlt,
                     showCheckmark: false,
                   ),
               ],
@@ -164,7 +165,7 @@ const ButtonSegment(
                 _SettingRow(
                   icon: Icons.badge_outlined,
                   label: l10n.settingsUsername,
-                  value: user?.username ?? 'â€”',
+                  value: user?.username ?? '—',
                 ),
                 const Divider(height: 24),
                 SizedBox(
@@ -234,9 +235,9 @@ const ButtonSegment(
           Center(
             child: Text(
               '${l10n.settingsAppVersion} 1.0.0',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: AppColors.textSoft,
+                color: palette.textSoft,
               ),
             ),
           ),
@@ -313,6 +314,7 @@ class _SettingRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
     return InkWell(
       borderRadius: AppRadius.md,
       onTap: onTap,
@@ -320,21 +322,21 @@ class _SettingRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
           children: [
-            Icon(icon, size: 20, color: AppColors.primary),
+            Icon(icon, size: 20, color: palette.primary),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: AppColors.text,
+                  color: palette.text,
                 ),
               ),
             ),
             if (value != null)
               Text(
                 value!,
-                style: const TextStyle(color: AppColors.textSoft, fontSize: 13),
+                style: TextStyle(color: palette.textSoft, fontSize: 13),
               ),
             if (trailing != null) trailing!,
           ],

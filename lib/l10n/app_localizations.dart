@@ -137,7 +137,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingTitle1.
   ///
   /// In en, this message translates to:
-  /// **'Learn American pronunciation easily'**
+  /// **'Welcome to English Core'**
   String get onboardingTitle1;
 
   /// No description provided for @onboardingSub1.
@@ -149,26 +149,56 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingTitle2.
   ///
   /// In en, this message translates to:
-  /// **'Hear clear, natural voices'**
+  /// **'You Are Safe'**
   String get onboardingTitle2;
 
   /// No description provided for @onboardingSub2.
   ///
   /// In en, this message translates to:
-  /// **'Listen to words and sentences with a natural American voice, male or female.'**
+  /// **'A safe place to learn and speak with confidence, without fear.'**
   String get onboardingSub2;
 
   /// No description provided for @onboardingTitle3.
   ///
   /// In en, this message translates to:
-  /// **'Translate, pronounce, and save'**
+  /// **'English Core'**
   String get onboardingTitle3;
 
   /// No description provided for @onboardingSub3.
   ///
   /// In en, this message translates to:
-  /// **'Translate, pronounce, and save your favorite words to review anytime.'**
+  /// **'Your safe way to improve your language.'**
   String get onboardingSub3;
+
+  /// No description provided for @onboardingBrandAr.
+  ///
+  /// In en, this message translates to:
+  /// **'انجلشكور'**
+  String get onboardingBrandAr;
+
+  /// No description provided for @onboardingOwnerAr.
+  ///
+  /// In en, this message translates to:
+  /// **'ثروت توفيق'**
+  String get onboardingOwnerAr;
+
+  /// No description provided for @onboardingBrandEn.
+  ///
+  /// In en, this message translates to:
+  /// **'English Core'**
+  String get onboardingBrandEn;
+
+  /// No description provided for @onboardingOwnerEn.
+  ///
+  /// In en, this message translates to:
+  /// **'Mr Tharwat Tawfiq'**
+  String get onboardingOwnerEn;
+
+  /// No description provided for @onboardingTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'طريقك الآمن لتحسين لغتك'**
+  String get onboardingTagline;
 
   /// No description provided for @onboardingStart.
   ///
@@ -187,6 +217,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Skip'**
   String get onboardingSkip;
+
+  /// No description provided for @homeWelcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome'**
+  String get homeWelcome;
 
   /// No description provided for @loginTitle.
   ///

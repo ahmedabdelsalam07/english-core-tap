@@ -18,7 +18,7 @@ void main() {
     await tester.pump();
 
     // Splash screen renders with brand text.
-    expect(find.text('ENGLISH CORE'), findsWidgets);
+    expect(find.text('English Core'), findsWidgets);
 
     // Let the async bootstrap settle (plugin init has a 4s timeout), then
     // fire the splash navigation timer: go('/') must be redirected to

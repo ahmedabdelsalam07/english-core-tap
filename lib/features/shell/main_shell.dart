@@ -132,7 +132,8 @@ class _NavButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? AppColors.primary : AppColors.textSoft;
+    final palette = AppPalette.of(context);
+    final color = selected ? palette.primary : palette.textSoft;
     return InkWell(
       onTap: onTap,
       child: Column(

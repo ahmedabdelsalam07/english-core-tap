@@ -44,11 +44,12 @@ class PronunciationService {
 
     // 1. Word-level IPA + native audio (best effort)
     final wordResults = await _dictionary.transcribe(trimmed);
-    final ipaHints = wordResults
-        .map((w) => w.ipa)
-        .whereType<String>()
-        .map((ipa) => ipa.replaceAll('/', '').trim())
-        .toList();
+    final ipaHints = <String, String>{
+      for (final w in wordResults)
+        if (w.ipa != null && w.ipa!.trim().isNotEmpty)
+          w.word.toLowerCase().replaceAll(RegExp(r"[^a-z'\-]"), ''):
+              w.ipa!.replaceAll('/', '').trim(),
+    }..removeWhere((k, _) => k.isEmpty);
 
     // 2. Translation
     final translation = await _translation.translate(trimmed);

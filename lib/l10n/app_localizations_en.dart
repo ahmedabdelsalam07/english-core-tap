@@ -28,25 +28,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get splashSub => 'MR. THARWAT TAWFIQ';
 
   @override
-  String get onboardingTitle1 => 'Learn American pronunciation easily';
+  String get onboardingTitle1 => 'Welcome to English Core';
 
   @override
   String get onboardingSub1 =>
       'Type any word or sentence and get a clear American pronunciation with its Arabic meaning.';
 
   @override
-  String get onboardingTitle2 => 'Hear clear, natural voices';
+  String get onboardingTitle2 => 'You Are Safe';
 
   @override
   String get onboardingSub2 =>
-      'Listen to words and sentences with a natural American voice, male or female.';
+      'A safe place to learn and speak with confidence, without fear.';
 
   @override
-  String get onboardingTitle3 => 'Translate, pronounce, and save';
+  String get onboardingTitle3 => 'English Core';
 
   @override
-  String get onboardingSub3 =>
-      'Translate, pronounce, and save your favorite words to review anytime.';
+  String get onboardingSub3 => 'Your safe way to improve your language.';
+
+  @override
+  String get onboardingBrandAr => 'انجلشكور';
+
+  @override
+  String get onboardingOwnerAr => 'ثروت توفيق';
+
+  @override
+  String get onboardingBrandEn => 'English Core';
+
+  @override
+  String get onboardingOwnerEn => 'Mr Tharwat Tawfiq';
+
+  @override
+  String get onboardingTagline => 'طريقك الآمن لتحسين لغتك';
 
   @override
   String get onboardingStart => 'Get Started';
@@ -56,6 +70,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingSkip => 'Skip';
+
+  @override
+  String get homeWelcome => 'Welcome';
 
   @override
   String get loginTitle => 'Welcome';

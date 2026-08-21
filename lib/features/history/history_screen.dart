@@ -178,6 +178,8 @@ class _HistoryTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tts = ref.watch(ttsServiceProvider);
+    final l10n = AppLocalizations.of(context);
+    final palette = AppPalette.of(context);
     return Material(
       color: Theme.of(context).colorScheme.surface,
       borderRadius: AppRadius.md,
@@ -197,10 +199,10 @@ class _HistoryTile extends ConsumerWidget {
                       textDirection: TextDirection.ltr,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.text,
+                        color: palette.text,
                       ),
                     ),
                     if ((entry.arabicPhonetic ?? '').isNotEmpty) ...[
@@ -210,9 +212,9 @@ class _HistoryTile extends ConsumerWidget {
                         textDirection: TextDirection.rtl,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
-                          color: AppColors.secondary,
+                          color: palette.secondary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -220,25 +222,25 @@ class _HistoryTile extends ConsumerWidget {
                     const SizedBox(height: 2),
                     Text(
                       _relative(entry.timestamp),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        color: AppColors.textSoft,
+                        color: palette.textSoft,
                       ),
                     ),
                   ],
                 ),
               ),
               IconButton(
-                tooltip: 'Play',
+                tooltip: l10n.resultPlay,
                 onPressed: () => tts.speak(entry.englishText),
-                icon: const Icon(Icons.play_circle_outline_rounded,
-                    color: AppColors.primary, size: 22),
+                icon: Icon(Icons.play_circle_outline_rounded,
+                    color: palette.primary, size: 22),
               ),
               IconButton(
-                tooltip: 'Delete',
+                tooltip: l10n.historyDelete,
                 onPressed: onDelete,
-                icon: const Icon(Icons.delete_outline_rounded,
-                    color: AppColors.textSoft, size: 20),
+                icon: Icon(Icons.delete_outline_rounded,
+                    color: palette.textSoft, size: 20),
               ),
             ],
           ),

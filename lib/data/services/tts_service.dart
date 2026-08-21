@@ -11,7 +11,7 @@ import 'api_config.dart';
 class AvailableVoice {
   final String name;
   final String locale;
-  final VoiceGender gender;
+  final VoiceGender gender; // male / female / auto (= undetected)
   const AvailableVoice({
     required this.name,
     required this.locale,
@@ -23,6 +23,14 @@ class AvailableVoice {
 ///
 /// Provider-based (flutter_tts) and accent-aware (en-US). Supports male /
 /// female voice selection, play / pause / resume / stop / replay and speed.
+///
+/// Voice strategy (robust across Android/iOS):
+///  1. Query the engine for available voices at init.
+///  2. Detect gender dynamically from voice names/markers.
+///  3. Pick requested gender → any gendered en-US voice → any en-US voice.
+///  4. If no distinct voice exists, apply a real pitch differentiation so the
+///     engine output audibly changes (documented fallback, never a fake UI).
+///  5. Never crash when a voice is unavailable.
 class TtsService {
   final FlutterTts _tts = FlutterTts();
 
@@ -35,24 +43,32 @@ class TtsService {
   String _currentText = '';
   double _currentSpeed = 1.0;
   VoiceGender _currentGender = VoiceGender.auto;
+  double _activePitch = 1.0;
   bool get _isPauseSupported => Platform.isIOS;
   Timer? _progressTimer;
   final int _estimatedMsPerChar = 90;
   final int _tickMs = 250;
 
+  // Gender markers that appear directly in engine-provided voice metadata.
+  static const List<String> _maleMarkers = ['male', 'man', 'boy'];
+  static const List<String> _femaleMarkers = ['female', 'woman', 'girl'];
+
+  // Known Android (Google TTS) voice name fragments.
   static const List<String> _androidMaleHints = [
-    'tpf', 'tpd', 'tpc', 'tpb', 'en-us-x-iob', 'male',
+    '-iom', 'iol', 'iob', 'tpd', 'tpc', 'tpb', 'g-d', 'rda',
+    'male', // substring of "female" too — order matters, see detection below
   ];
   static const List<String> _androidFemaleHints = [
-    'sfg', 'sfd', 'sfc', 'sfx', 'sfb', 'female',
+    'sfg', 'sfd', 'sfc', 'sfx', 'sfb', 'tpf', 'rmc', 'g-f',
   ];
   static const List<String> _iosMaleHints = [
     'fred', 'aaron', 'daniel', 'alex', 'nathan', 'gordon', 'thomas',
-    'andrew', 'ravi', 'reed', 'rocko',
+    'andrew', 'ravi', 'reed', 'rocko', 'grandpa', 'eddy',
   ];
   static const List<String> _iosFemaleHints = [
     'samantha', 'karen', 'moira', 'tessa', 'zira', 'susan', 'serena',
-    'katya', 'ava', 'aria', 'ana', 'allison', 'nico', 'ellen',
+    'katya', 'ava', 'aria', 'ana', 'allison', 'nico', 'ellen', 'grandma',
+    'shelley', 'sandy', 'flo',
   ];
 
   Future<void> init() async {
@@ -85,32 +101,50 @@ class TtsService {
     } catch (_) {
       // voices may be unavailable on some emulators; TTS still works
     }
+    debugOnlyLog('TTS voices found: ${_available.length}');
   }
 
-  /// Only en-US voices, labeled male/female for the selector.
+  /// Only en-US voices, labeled male/female/auto.
   List<AvailableVoice> get voices => _available;
+
+  bool get hasMaleVoice => _available.any((v) => v.gender == VoiceGender.male);
+  bool get hasFemaleVoice =>
+      _available.any((v) => v.gender == VoiceGender.female);
 
   VoiceGender guessGenderOf(AvailableVoice v) => v.gender;
 
+  /// Applies speed immediately to the engine (used by settings changes).
   Future<void> setSpeed(double speed) async {
     _currentSpeed = speed;
     await _applyRate();
   }
 
+  /// Applies voice/pitch immediately to the engine (settings changes).
   Future<void> setGender(VoiceGender gender) async {
     _currentGender = gender;
+    await _applyVoice();
+  }
+
+  /// Pushes both persisted preferences to the engine in one call.
+  Future<void> applySettings({
+    required VoiceGender gender,
+    required double speed,
+  }) async {
+    _currentGender = gender;
+    _currentSpeed = speed;
+    await _applyRate();
     await _applyVoice();
   }
 
   Future<void> speak(
     String text, {
     VoiceGender gender = VoiceGender.auto,
-    double speed = 1.0,
+    double? speed,
   }) async {
     if (text.trim().isEmpty) return;
     _currentText = text;
     _currentGender = gender;
-    _currentSpeed = speed;
+    if (speed != null) _currentSpeed = speed;
     await stop();
     try {
       await _tts.setLanguage('en-US');
@@ -150,11 +184,7 @@ class TtsService {
   Future<void> resume() async {
     if (!isPaused.value) return;
     try {
-      if (Platform.isIOS) {
-        await _tts.speak(_currentText);
-      } else {
-        await _tts.speak(_currentText);
-      }
+      await _tts.speak(_currentText);
       isPaused.value = false;
       isSpeaking.value = true;
       _startProgressTimer(_currentText);
@@ -189,27 +219,85 @@ class TtsService {
     } catch (_) {}
   }
 
+  /// Resolves and applies the closest matching voice for [_currentGender].
+  ///
+  /// Fallback chain: exact gender → any en-US voice → system default with a
+  /// pitch-based differentiation so the selection is always audible.
   Future<void> _applyVoice() async {
-    activeVoiceName.value = '';
-    if (_available.isEmpty || _currentGender == VoiceGender.auto) return;
+    if (_currentGender == VoiceGender.auto) {
+      _activePitch = 1.0;
+      try {
+        await _tts.setPitch(1.0);
+      } catch (_) {}
+      activeVoiceName.value = '';
+      return;
+    }
+
     final match = _pickVoice(_currentGender);
-    if (match == null) return;
-    try {
-      if (Platform.isAndroid) {
-        await _tts.setVoice({'name': match.name, 'locale': 'en-US'});
-      } else {
-        await _tts.setVoice({'name': match.name, 'language': 'en-US'});
+    var applied = false;
+    if (match != null) {
+      try {
+        if (Platform.isAndroid) {
+          await _tts.setVoice({'name': match.name, 'locale': 'en-US'});
+        } else {
+          await _tts.setVoice({'name': match.name, 'language': 'en-US'});
+        }
+        applied = true;
+        activeVoiceName.value = match.name;
+      } catch (_) {
+        try {
+          await _tts.setLanguage('en-US');
+        } catch (_) {}
       }
-      activeVoiceName.value = match.name;
-    } catch (_) {
-      await _tts.setLanguage('en-US');
+    }
+
+    // Natural pitch per gender; slightly emphasised when only the fallback
+    // path is available so the change remains clearly audible.
+    final natural = _currentGender == VoiceGender.male ? 0.85 : 1.15;
+    _activePitch = applied ? natural : (natural == 1.15 ? 1.25 : 0.75);
+    try {
+      await _tts.setPitch(_activePitch);
+    } catch (_) {}
+    if (!applied && activeVoiceName.value.isEmpty) {
+      activeVoiceName.value =
+          '${_currentGender.name} (pitch ${_activePitch.toStringAsFixed(2)})';
     }
   }
 
   AvailableVoice? _pickVoice(VoiceGender gender) {
-    final candidates = _available.where((v) => v.gender == gender).toList();
-    if (candidates.isEmpty) return null;
-    return candidates.first;
+    final exact =
+        _available.where((v) => v.gender == gender).toList();
+    if (exact.isNotEmpty) return exact.first;
+    // Safe fallback: any available en-US voice (prefer undetected-gender
+    // ones before the opposite gender).
+    final neutral =
+        _available.where((v) => v.gender == VoiceGender.auto).toList();
+    if (neutral.isNotEmpty) return neutral.first;
+    return _available.isEmpty ? null : _available.first;
+  }
+
+  VoiceGender _detectGender(String lowerName) {
+    // Explicit markers win first ("female" contains "male", so check it
+    // before generic "male").
+    for (final m in _femaleMarkers) {
+      if (lowerName.contains(m)) return VoiceGender.female;
+    }
+    for (final m in _maleMarkers) {
+      if (lowerName.contains(m)) return VoiceGender.male;
+    }
+    final hints = Platform.isAndroid ? _androidMaleHints : _iosMaleHints;
+    for (final h in hints.skip(Platform.isAndroid ? 1 : 0)) {
+      if (lowerName.contains(h)) return VoiceGender.male;
+    }
+    final fHints = Platform.isAndroid ? _androidFemaleHints : _iosFemaleHints;
+    for (final h in fHints) {
+      if (lowerName.contains(h)) return VoiceGender.female;
+    }
+    if (!Platform.isAndroid) {
+      // Android list keeps 'male' last to avoid matching "female".
+      if (lowerName.contains('male')) return VoiceGender.male;
+    }
+    return VoiceGender.auto;
   }
 
   List<AvailableVoice> _parseAvailableVoices(List<dynamic> raw) {
@@ -222,20 +310,11 @@ class TtsService {
           .toString()
           .toLowerCase();
       if (name.isEmpty || !locale.startsWith('en-us')) continue;
-      final lower = name.toLowerCase();
-      final maleHints =
-          Platform.isAndroid ? _androidMaleHints : _iosMaleHints;
-      final femaleHints =
-          Platform.isAndroid ? _androidFemaleHints : _iosFemaleHints;
-      final isMale = maleHints.any(lower.contains);
-      final isFemale = femaleHints.any(lower.contains);
       out.add(
         AvailableVoice(
           name: name,
           locale: 'en-US',
-          gender: isMale
-              ? VoiceGender.male
-              : (isFemale ? VoiceGender.female : VoiceGender.female),
+          gender: _detectGender(name.toLowerCase()),
         ),
       );
     }

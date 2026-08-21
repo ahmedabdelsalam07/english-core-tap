@@ -81,16 +81,22 @@ class HomeController extends StateNotifier<HomeState> {
         await translationFuture;
       }
 
-      final ipaHints = wordResults
-          .map((w) => w.ipa)
-          .whereType<String>()
-          .map((ipa) => ipa.replaceAll('/', '').trim())
-          .toList();
+      // Per-word IPA hints keyed by the lower-cased word so alignment never
+      // breaks when punctuation/numbers are skipped during transcription.
+      final ipaHints = <String, String>{};
+      for (final w in wordResults) {
+        final key = w.word.toLowerCase().replaceAll(RegExp("[^a-z'-]"), '');
+        final ipa = w.ipa?.replaceAll('/', '').trim() ?? '';
+        if (key.isNotEmpty && ipa.isNotEmpty) {
+          ipaHints[key] = ipa;
+        }
+      }
 
       // Prepare pronunciation (fast, sync) while translation runs
       state = const HomeState(phase: HomePhase.preparing);
       final phoneticService = ref.read(arabicPhoneticServiceProvider);
-      final phonetic = phoneticService.toArabicPhonetic(englishText, ipaHints: ipaHints);
+      final phonetic =
+          phoneticService.toArabicPhonetic(englishText, ipaHints: ipaHints);
 
       state = const HomeState(phase: HomePhase.translating);
       await Future<void>.delayed(const Duration(milliseconds: 200));

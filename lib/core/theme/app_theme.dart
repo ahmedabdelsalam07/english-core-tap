@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'app_colors.dart';
 import 'app_radius.dart';
@@ -14,26 +15,17 @@ class AppTheme {
     final scheme = ColorScheme.fromSeed(
       seedColor: AppColors.primary,
       brightness: brightness,
+      surface: isDark ? AppColors.darkSurface : AppColors.surface,
+      primary: isDark ? AppColors.primaryOnDark : AppColors.primary,
+      secondary: isDark ? AppColors.secondaryOnDark : AppColors.secondary,
     );
-
-    Color surfaceOf(Color c) {
-      if (c == AppColors.surface) {
-        return isDark ? AppColors.darkSurface : AppColors.surface;
-      }
-      if (c == AppColors.lavender) {
-        return isDark ? AppColors.darkSurfaceAlt : AppColors.lavender;
-      }
-      if (c == AppColors.cream) {
-        return isDark ? AppColors.darkSurfaceAlt : AppColors.cream;
-      }
-      return c;
-    }
 
     final baseTheme = ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
       brightness: brightness,
-      scaffoldBackgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
+      scaffoldBackgroundColor:
+          isDark ? AppColors.darkBackground : AppColors.background,
       fontFamily: AppTypography.fontFamily,
     );
 
@@ -43,17 +35,26 @@ class AppTheme {
         displayColor: isDark ? AppColors.darkText : AppColors.text,
         fontFamily: AppTypography.fontFamily,
       ),
+      iconTheme: IconThemeData(
+        color: isDark ? AppColors.darkText : AppColors.text,
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         foregroundColor: isDark ? AppColors.darkText : AppColors.text,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness:
+              isDark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+        ),
         titleTextStyle: AppTypography.h3.copyWith(
           color: isDark ? AppColors.darkText : AppColors.text,
         ),
       ),
       cardTheme: CardThemeData(
-        color: surfaceOf(AppColors.surface),
+        color: isDark ? AppColors.darkSurface : AppColors.surface,
         elevation: 0,
         shape: const RoundedRectangleBorder(borderRadius: AppRadius.lg),
       ),
@@ -63,10 +64,16 @@ class AppTheme {
         space: 1,
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: isDark ? AppColors.darkSurfaceAlt : AppColors.lavender,
+        backgroundColor:
+            isDark ? AppColors.darkSurfaceAlt : AppColors.lavender,
         side: BorderSide.none,
-        labelStyle: const TextStyle(
-          color: AppColors.primary,
+        labelStyle: TextStyle(
+          color: isDark ? AppColors.primaryOnDark : AppColors.primary,
+          fontWeight: FontWeight.w600,
+          fontFamily: AppTypography.fontFamily,
+        ),
+        secondaryLabelStyle: const TextStyle(
+          color: Colors.white,
           fontWeight: FontWeight.w600,
           fontFamily: AppTypography.fontFamily,
         ),
@@ -75,16 +82,20 @@ class AppTheme {
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: isDark ? AppColors.darkSurfaceAlt : AppColors.text,
-        contentTextStyle: const TextStyle(
-          color: Colors.white,
+        contentTextStyle: TextStyle(
+          color: isDark ? AppColors.darkText : Colors.white,
           fontFamily: AppTypography.fontFamily,
         ),
         shape: const RoundedRectangleBorder(borderRadius: AppRadius.md),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: isDark ? AppColors.darkSurfaceAlt : AppColors.lavenderSoft,
+        fillColor:
+            isDark ? AppColors.darkSurfaceAlt : AppColors.lavenderSoft,
         hintStyle: TextStyle(
+          color: isDark ? AppColors.darkTextSoft : AppColors.textSoft,
+        ),
+        labelStyle: TextStyle(
           color: isDark ? AppColors.darkTextSoft : AppColors.textSoft,
         ),
         contentPadding: const EdgeInsets.symmetric(
@@ -99,10 +110,38 @@ class AppTheme {
           borderRadius: AppRadius.md,
           borderSide: BorderSide.none,
         ),
-        focusedBorder: const OutlineInputBorder(
+        focusedBorder: OutlineInputBorder(
           borderRadius: AppRadius.md,
-          borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: BorderSide(
+            color: isDark ? AppColors.primaryOnDark : AppColors.primary,
+            width: 1.5,
+          ),
         ),
+      ),
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: isDark ? AppColors.primaryOnDark : AppColors.primary,
+        selectionColor: (isDark
+                ? AppColors.primaryOnDark
+                : AppColors.primary)
+            .withOpacity(0.25),
+        selectionHandleColor:
+            isDark ? AppColors.primaryOnDark : AppColors.primary,
+      ),
+      dropdownMenuTheme: DropdownMenuThemeData(
+        textStyle: TextStyle(
+          color: isDark ? AppColors.darkText : AppColors.text,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          fontFamily: AppTypography.fontFamily,
+        ),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: isDark ? AppColors.darkSurfaceAlt : AppColors.surface,
+        textStyle: TextStyle(
+          color: isDark ? AppColors.darkText : AppColors.text,
+          fontFamily: AppTypography.fontFamily,
+        ),
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.md),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -117,16 +156,22 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           minimumSize: const Size.fromHeight(52),
-          foregroundColor: AppColors.primary,
-          side: const BorderSide(color: AppColors.primary),
-          textStyle: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.w600),
+          foregroundColor:
+              isDark ? AppColors.primaryOnDark : AppColors.primary,
+          side: BorderSide(
+            color: isDark ? AppColors.primaryOnDark : AppColors.primary,
+          ),
+          textStyle:
+              AppTypography.bodySmall.copyWith(fontWeight: FontWeight.w600),
           shape: const RoundedRectangleBorder(borderRadius: AppRadius.md),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          textStyle: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.w600),
+          foregroundColor:
+              isDark ? AppColors.primaryOnDark : AppColors.primary,
+          textStyle:
+              AppTypography.bodySmall.copyWith(fontWeight: FontWeight.w600),
         ),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
@@ -134,9 +179,11 @@ class AppTheme {
         foregroundColor: Colors.white,
       ),
       sliderTheme: SliderThemeData(
-        activeTrackColor: AppColors.primary,
-        thumbColor: AppColors.primary,
-        inactiveTrackColor: isDark ? AppColors.darkDivider : AppColors.divider,
+        activeTrackColor:
+            isDark ? AppColors.primaryOnDark : AppColors.primary,
+        thumbColor: isDark ? AppColors.primaryOnDark : AppColors.primary,
+        inactiveTrackColor:
+            isDark ? AppColors.darkDivider : AppColors.divider,
         overlayColor: AppColors.primary.withOpacity(0.12),
       ),
       switchTheme: SwitchThemeData(
@@ -158,7 +205,9 @@ class AppTheme {
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(
           backgroundColor: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.selected)) return AppColors.primary;
+            if (states.contains(WidgetState.selected)) {
+              return AppColors.primary;
+            }
             return isDark ? AppColors.darkSurfaceAlt : AppColors.lavenderSoft;
           }),
           foregroundColor: WidgetStateProperty.resolveWith((states) {
@@ -175,14 +224,17 @@ class AppTheme {
               fontFamily: AppTypography.fontFamily,
             ),
           ),
-          shape: WidgetStateProperty.all(const RoundedRectangleBorder(borderRadius: AppRadius.md)),
+          shape: WidgetStateProperty.all(
+              const RoundedRectangleBorder(borderRadius: AppRadius.md)),
         ),
       ),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: AppColors.primary,
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: isDark ? AppColors.primaryOnDark : AppColors.primary,
+        linearTrackColor:
+            isDark ? AppColors.darkDivider : AppColors.divider,
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: surfaceOf(AppColors.surface),
+        backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
         shape: const RoundedRectangleBorder(borderRadius: AppRadius.lg),
         titleTextStyle: AppTypography.h3.copyWith(
           color: isDark ? AppColors.darkText : AppColors.text,
@@ -192,15 +244,17 @@ class AppTheme {
         ),
       ),
       bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: surfaceOf(AppColors.surface),
+        backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
         ),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: surfaceOf(AppColors.surface),
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: isDark ? AppColors.darkTextSoft : AppColors.textSoft,
+        backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
+        selectedItemColor:
+            isDark ? AppColors.primaryOnDark : AppColors.primary,
+        unselectedItemColor:
+            isDark ? AppColors.darkTextSoft : AppColors.textSoft,
         type: BottomNavigationBarType.fixed,
         selectedLabelStyle: const TextStyle(
           fontWeight: FontWeight.w600,

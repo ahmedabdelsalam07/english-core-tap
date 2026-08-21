@@ -16,11 +16,13 @@ class EnglishCoreTapApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsControllerProvider);
-    final router = buildRouter(ref);
+    // Created once and kept alive — never recreated on rebuilds.
+    final router = ref.watch(appRouterProvider);
 
-    // Refresh routing when auth / settings change (language, theme, onboarding).
+    // Refresh routing only when auth / onboarding state actually changes
+    // (language & theme are handled by MaterialApp directly, so changing
+    // them does NOT navigate the user away from the current screen).
     ref.listen(authControllerProvider, (_, __) => router.refresh());
-    ref.listen(settingsControllerProvider, (_, __) => router.refresh());
 
     final locale = settings.locale == AppLocale.en
         ? const Locale('en')

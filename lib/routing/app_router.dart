@@ -17,7 +17,7 @@ import '../providers/auth_provider.dart';
 import '../providers/settings_provider.dart';
 
 /// Builds the app router with auth/onboarding redirects.
-GoRouter buildRouter(WidgetRef ref) {
+GoRouter buildRouter(Ref ref) {
   final router = GoRouter(
     initialLocation: '/splash',
     redirect: (context, state) {
@@ -126,3 +126,13 @@ GoRouter buildRouter(WidgetRef ref) {
   );
   return router;
 }
+
+/// The app router must be created exactly ONCE and kept alive for the whole
+/// app session. Recreating it (e.g. inside a build method) resets navigation
+/// to [GoRouter.initialLocation] whenever any watched provider changes —
+/// that was the root cause of "selecting speed/voice jumps back to Home".
+final appRouterProvider = Provider<GoRouter>((ref) {
+  final router = buildRouter(ref);
+  ref.onDispose(router.dispose);
+  return router;
+});

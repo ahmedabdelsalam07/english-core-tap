@@ -23,7 +23,7 @@ void main() {
     // 'better' is not in the override dictionary, so the IPA hint is used.
     final result = service.toArabicPhonetic(
       'better',
-      ipaHints: ['ˈbɛtər'],
+      ipaHints: {'better': 'ˈbɛtər'},
     );
     expect(result, isNotEmpty);
     expect(result.contains('ر'), isTrue);

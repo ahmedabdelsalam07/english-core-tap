@@ -43,7 +43,8 @@ class _FavoriteCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-final l10n = AppLocalizations.of(context);
+    final l10n = AppLocalizations.of(context);
+    final palette = AppPalette.of(context);
     final tts = ref.watch(ttsServiceProvider);
     final result = entry.result;
 
@@ -66,10 +67,10 @@ final l10n = AppLocalizations.of(context);
                       textDirection: TextDirection.ltr,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.text,
+                        color: palette.text,
                       ),
                     ),
                   ),
@@ -92,19 +93,19 @@ final l10n = AppLocalizations.of(context);
               Text(
                 result.arabicPhonetic,
                 textDirection: TextDirection.rtl,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.secondary,
+                  color: palette.secondary,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 result.arabicTranslation,
                 textDirection: TextDirection.rtl,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.textSoft,
+                  color: palette.textSoft,
                 ),
               ),
               const SizedBox(height: 10),
@@ -112,9 +113,9 @@ final l10n = AppLocalizations.of(context);
                 children: [
                   Text(
                     _date(result.createdAt),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
-                      color: AppColors.textSoft,
+                      color: palette.textSoft,
                     ),
                   ),
                   const Spacer(),
@@ -139,7 +140,7 @@ final l10n = AppLocalizations.of(context);
                               ? Icons.stop_rounded
                               : Icons.play_arrow_rounded,
                           size: 20,
-                          color: AppColors.primary,
+                          color: palette.primary,
                         ),
                       );
                     },

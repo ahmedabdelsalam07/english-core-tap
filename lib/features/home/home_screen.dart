@@ -7,6 +7,7 @@ import '../../core/enums.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../l10n/app_localizations.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/history_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -199,27 +200,36 @@ static const List<String> _examples = [
   }
 
   Widget _buildHeader(AppThemeMode mode) {
+    final palette = AppPalette.of(context);
+    final headerL10n = AppLocalizations.of(context);
+    final auth = ref.watch(authControllerProvider);
+    final username = auth.valueOrNull?.username;
     return Row(
       children: [
-const BrandMark(size: 42),
+        // LOGO ONLY — brand symbol, no name/number from the full asset.
+        const LogoMark(size: 46),
         const SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'ENGLISH CORE',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                username == null || username.isEmpty
+                    ? 'English Core'
+                    : '${headerL10n.homeWelcome}، $username',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w800,
-                      color: AppColors.primary,
-                      letterSpacing: 1.4,
+                      fontSize: 19,
+                      color: palette.text,
                     ),
               ),
-const Text(
+              Text(
                 'MR. THARWAT TAWFIQ',
                 style: TextStyle(
                   fontSize: 10,
-                  color: AppColors.textSoft,
+                  color: palette.textSoft,
                   letterSpacing: 0.8,
                 ),
               ),
@@ -232,6 +242,7 @@ const Text(
             mode == AppThemeMode.dark
                 ? Icons.light_mode_rounded
                 : Icons.dark_mode_outlined,
+            color: palette.textSoft,
           ),
           onPressed: () {
             final controller = ref.read(settingsControllerProvider.notifier);
@@ -242,12 +253,13 @@ const Text(
             );
           },
         ),
-const LanguageSwitcher(),
+        LanguageSwitcher(iconColor: palette.textSoft),
       ],
     );
   }
 
   Widget _buildTitle(AppLocalizations l10n) {
+    final palette = AppPalette.of(context);
     return Column(
       children: [
         Text(
@@ -255,7 +267,7 @@ const LanguageSwitcher(),
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w800,
-                color: AppColors.text,
+                color: palette.text,
               ),
         ),
         const SizedBox(height: 6),
@@ -264,7 +276,7 @@ const LanguageSwitcher(),
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w700,
-                color: AppColors.secondary,
+                color: palette.secondary,
               ),
         ),
         const SizedBox(height: 10),
@@ -272,7 +284,7 @@ const LanguageSwitcher(),
           l10n.homeSubtitle,
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSoft,
+                color: palette.textSoft,
                 height: 1.6,
               ),
         ),
@@ -281,6 +293,7 @@ const LanguageSwitcher(),
   }
 
   Widget _buildInputCard(AppLocalizations l10n) {
+    final palette = AppPalette.of(context);
     return SectionCard(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -299,11 +312,11 @@ ValueListenableBuilder<TextEditingValue>(
                     maxLines: 4,
                     textInputAction: TextInputAction.search,
                     onSubmitted: (_) => _process(),
-                    style: const TextStyle(fontSize: 18),
+                    style: TextStyle(fontSize: 18, color: palette.text),
                     textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
                     decoration: InputDecoration(
                       hintText: l10n.inputPlaceholder,
-                      hintStyle: const TextStyle(color: AppColors.textSoft),
+                      hintStyle: TextStyle(color: palette.textSoft),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -313,9 +326,9 @@ ValueListenableBuilder<TextEditingValue>(
                         : Alignment.centerLeft,
                     child: Text(
                       isArabic ? 'عربي → English' : 'English → عربي',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        color: AppColors.textSoft,
+                        color: palette.textSoft,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -345,8 +358,8 @@ ValueListenableBuilder<TextEditingValue>(
                   if (value.text.isEmpty) return const SizedBox.shrink();
                   return IconButton(
                     tooltip: l10n.inputClear,
-                    icon: const Icon(Icons.close_rounded,
-                        color: AppColors.textSoft),
+                    icon: Icon(Icons.close_rounded,
+                        color: AppPalette.of(context).textSoft),
                     onPressed: _clear,
                   );
                 },
@@ -359,6 +372,12 @@ ValueListenableBuilder<TextEditingValue>(
   }
 
   Widget _buildVoiceSpeedRow(AppLocalizations l10n, settings) {
+    final palette = AppPalette.of(context);
+    final dropdownStyle = TextStyle(
+      color: palette.text,
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+    );
     return Row(
       children: [
         Expanded(
@@ -369,9 +388,9 @@ ValueListenableBuilder<TextEditingValue>(
               children: [
                 Text(
                   l10n.resultVoice,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
-                    color: AppColors.textSoft,
+                    color: palette.textSoft,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -381,11 +400,8 @@ ValueListenableBuilder<TextEditingValue>(
                     value: settings.defaultVoice,
                     isExpanded: true,
                     isDense: true,
-                    style: const TextStyle(
-                      color: AppColors.text,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    dropdownColor: palette.surface,
+                    style: dropdownStyle,
                     items: [
                       for (final v in VoiceGender.values)
                         DropdownMenuItem(
@@ -415,9 +431,9 @@ ValueListenableBuilder<TextEditingValue>(
               children: [
                 Text(
                   l10n.resultSpeed,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
-                    color: AppColors.textSoft,
+                    color: palette.textSoft,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -427,11 +443,8 @@ ValueListenableBuilder<TextEditingValue>(
                     value: settings.playbackSpeed,
                     isExpanded: true,
                     isDense: true,
-                    style: const TextStyle(
-                      color: AppColors.text,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    dropdownColor: palette.surface,
+                    style: dropdownStyle,
                     items: [
                       for (final s in playbackSpeeds)
                         DropdownMenuItem(
@@ -522,14 +535,15 @@ ValueListenableBuilder<TextEditingValue>(
   }
 
   Widget _buildExamples(AppLocalizations l10n) {
+    final palette = AppPalette.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           '${l10n.tryExamples} ',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
-            color: AppColors.textSoft,
+            color: palette.textSoft,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -542,8 +556,8 @@ ValueListenableBuilder<TextEditingValue>(
               ActionChip(
                 label: Text(
                   example,
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: palette.primary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -571,8 +585,9 @@ class _ToolButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
     return Material(
-      color: AppColors.lavender,
+      color: palette.surfaceAlt,
       borderRadius: AppRadius.pill,
       child: InkWell(
         borderRadius: AppRadius.pill,
@@ -582,14 +597,14 @@ class _ToolButton extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 18, color: AppColors.primary),
+              Icon(icon, size: 18, color: palette.primary),
               const SizedBox(width: 4),
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
+                  color: palette.primary,
                 ),
               ),
             ],
@@ -606,6 +621,7 @@ class _LoadingIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
     return Column(
       children: [
         const SizedBox(
@@ -616,8 +632,8 @@ class _LoadingIndicator extends StatelessWidget {
         const SizedBox(height: 10),
         Text(
           message,
-          style: const TextStyle(
-            color: AppColors.textSoft,
+          style: TextStyle(
+            color: palette.textSoft,
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
@@ -635,6 +651,7 @@ class _RecentHistory extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final entries = ref.watch(historyControllerProvider);
     final l10n = AppLocalizations.of(context);
+    final palette = AppPalette.of(context);
     if (entries.isEmpty) return const SizedBox.shrink();
     final recent = entries.take(5).toList();
     return Column(
@@ -642,15 +659,15 @@ class _RecentHistory extends ConsumerWidget {
       children: [
         Row(
           children: [
-            const Icon(Icons.history_rounded,
-                size: 18, color: AppColors.textSoft),
+            Icon(Icons.history_rounded,
+                size: 18, color: palette.textSoft),
             const SizedBox(width: 6),
             Text(
               l10n.recentHistory,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textSoft,
+                color: palette.textSoft,
               ),
             ),
           ],
@@ -670,15 +687,18 @@ class _RecentHistory extends ConsumerWidget {
                       horizontal: 14, vertical: 12),
                   child: Row(
                     children: [
-                      const Icon(Icons.volume_up_outlined,
-                          size: 18, color: AppColors.primary),
+                      Icon(Icons.volume_up_outlined,
+                          size: 18, color: palette.primary),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           e.englishText,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: palette.text,
+                          ),
                         ),
                       ),
                     ],
@@ -697,14 +717,18 @@ class _BackgroundDecoration extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
     return IgnorePointer(
       child: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.lavender, AppColors.background],
-            stops: [0.0, 0.45],
+            colors: [
+              palette.surfaceAlt.withOpacity(0.55),
+              palette.background,
+            ],
+            stops: const [0.0, 0.45],
           ),
         ),
       ),

@@ -130,7 +130,7 @@ const Row(
                     l10n.loginSubtitle,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textSoft,
+                          color: AppPalette.of(context).textSoft,
                         ),
                   ),
                   const SizedBox(height: 28),
@@ -227,16 +227,16 @@ const Row(
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.verified_user_outlined,
-                          size: 16, color: AppColors.textSoft),
+                      Icon(Icons.verified_user_outlined,
+                          size: 16, color: AppPalette.of(context).textSoft),
                       const SizedBox(width: 6),
                       Flexible(
                         child: Text(
                           l10n.loginSecureNote,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.textSoft,
+                            color: AppPalette.of(context).textSoft,
                           ),
                         ),
                       ),

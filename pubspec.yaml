@@ -35,6 +35,7 @@ flutter:
   generate: true
   assets:
     - assets/logo/
+    - assets/images/
   fonts:
     - family: Cairo
       fonts:

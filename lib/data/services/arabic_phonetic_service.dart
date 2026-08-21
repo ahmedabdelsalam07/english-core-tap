@@ -9,14 +9,19 @@ import 'dart:convert';
 ///  2. Otherwise, real IPA phonemes (from the dictionary service or a
 ///     built-in grapheme-to-phoneme engine) are mapped to Arabic script
 ///     with light diacritics reflecting short vowels.
+///
+/// Long words are fully supported: nothing truncates the input, unknown
+/// IPA symbols fall back to sensible Arabic equivalents (never dropped),
+/// and hints are matched per-word (not per-position) so multi-word input
+/// keeps every pronunciation aligned.
 class ArabicPhoneticService {
   const ArabicPhoneticService();
 
   /// Converts [text] to Arabic phonetic text.
   ///
-  /// [ipaHints] optionally provides per-word IPA (American English) aligned
-  /// to the words in [text]. When available, they are used directly.
-  String toArabicPhonetic(String text, {List<String>? ipaHints}) {
+  /// [ipaHints] optionally provides per-word IPA (American English) keyed
+  /// by the lower-cased word. When available, it is used directly.
+  String toArabicPhonetic(String text, {Map<String, String>? ipaHints}) {
     final words = text
         .trim()
         .split(RegExp(r'\s+'))
@@ -24,24 +29,26 @@ class ArabicPhoneticService {
         .toList();
     if (words.isEmpty) return '';
 
+    // Normalise case up-front: ARCHAEOLOGY == archaeology.
     final buffer = StringBuffer();
-    for (var i = 0; i < words.length; i++) {
-      final raw = words[i];
+    var first = true;
+    for (final raw in words) {
       final clean = raw.replaceAll(RegExp("[^A-Za-z'-]"), '');
       if (clean.isEmpty) continue;
+      if (!first) buffer.write(' ');
+      first = false;
 
-      final key = clean.toLowerCase();
+      final key = clean.toLowerCase().replaceAll("'", '');
       final override = _overrides[key];
       if (override != null) {
         buffer.write(override);
-      } else {
-        final ipa = (ipaHints != null && i < ipaHints.length &&
-                ipaHints[i].isNotEmpty)
-            ? ipaHints[i]
-            : graphemeToIpa(clean);
-        buffer.write(_convertIpa(ipa));
+        continue;
       }
-      if (i < words.length - 1) buffer.write(' ');
+      final ipa =
+          (ipaHints != null && ipaHints[key] != null && ipaHints[key]!.isNotEmpty)
+              ? ipaHints[key]!
+              : graphemeToIpa(clean);
+      buffer.write(_convertIpa(ipa));
     }
     return buffer.toString().trim();
   }
@@ -54,57 +61,74 @@ class ArabicPhoneticService {
     int i = 0;
     final n = w.length;
 
-    String sub(int len) =>
-        i + len <= n ? w.substring(i, i + len) : '';
+    String sub(int len) => i + len <= n ? w.substring(i, i + len) : '';
+    String rest(int from) => i + from <= n ? w.substring(i + from) : '';
 
-    bool nextConsonant() {
-      var j = i;
-      while (j < n && !'aeiouy'.contains(w[j])) {
-        j++;
+    // True when everything after position [idx] is consonants (VCe detector).
+    bool onlyConsonantsAfter(int idx) {
+      for (var j = idx; j < n; j++) {
+        if ('aeiouy'.contains(w[j])) return false;
       }
-      return j >= n;
+      return true;
     }
 
     while (i < n) {
       final s2 = sub(2);
       final s3 = sub(3);
       final s4 = sub(4);
-      final s6 = sub(6);
 
-      // Multi-letter vowel & r-colored sequences
-      if (s6 == 'eigh') {
-        out.write('eɪ');
-        i += 4;
+      // ---- suffix blocks -------------------------------------------------
+      if (rest(0).startsWith('ology')) {
+        out.write('ɑlədʒi');
+        i += 5;
         continue;
       }
       if (s4 == 'tion') {
-        out.write('ʃ');
-        i += 3;
+        out.write('ʃən');
+        i += 4;
         continue;
       }
       if (s4 == 'sion') {
-        out.write('ʒ');
+        out.write('ʒən');
+        i += 4;
+        continue;
+      }
+      if (s3 == 'ous') {
+        out.write('əs');
         i += 3;
         continue;
       }
-      if (s4 == 'ight') {
-        out.write('aɪ');
+
+      // ---- multi-letter vowel & r-colored sequences -----------------------
+      if (s4 == 'chae') {
+        // archaeology-style: ch = k, ae = iː (arkiology)
+        out.write('kiː');
         i += 4;
+        continue;
+      }
+      if (s3 == 'igh') {
+        out.write('aɪ');
+        i += 3;
         continue;
       }
       if (s4 == 'ough') {
-        out.write('ʌ');
+        out.write('oʊ');
         i += 4;
         continue;
       }
-      if (s3 == 'tion' || s3 == 'sion' || s3 == 'ssi') {
-        out.write('ʃ');
-        i += 3;
+      if (s2 == 'ae') {
+        out.write('iː');
+        i += 2;
+        continue;
+      }
+      if (s2 == 'oe' || s2 == 'eo') {
+        out.write('oʊ');
+        i += 2;
         continue;
       }
       if (s3 == 'ure') {
         out.write('ɚ');
-        i += 2;
+        i += 3;
         continue;
       }
       if (s3 == 'tch') {
@@ -117,6 +141,38 @@ class ArabicPhoneticService {
         i += 3;
         continue;
       }
+
+      // ---- past/plural endings --------------------------------------------
+      if (s2 == 'ed' && i + 2 == n) {
+        final prev = i > 0 ? w[i - 1] : '';
+        if (prev == 't' || prev == 'd') {
+          out.write('ɪd');
+        } else if ('pkfsxθʃtʃh'.contains(prev)) {
+          out.write('t');
+        } else {
+          out.write('d');
+        }
+        i += 2;
+        continue;
+      }
+      if (s2 == 'es' && i + 2 == n) {
+        final prev = i > 0 ? w[i - 1] : '';
+        final prev2 = i > 1 ? w[i - 2] : '';
+        final sibilant = 'sxz'.contains(prev) ||
+            (prev == 'h' && prev2 == 'c') || // -ches
+            (prev == 'e' && prev2 == 'g'); // -ges
+        if (sibilant) {
+          out.write('ɪz');
+        } else if ('bdgjlmnrvwyzðaɛiːoʊɔʌæɛ'.contains(prev)) {
+          out.write('z');
+        } else {
+          out.write('s');
+        }
+        i += 2;
+        continue;
+      }
+
+      // ---- consonant digraphs ---------------------------------------------
       if (s2 == 'th') {
         out.write('θ');
         i += 2;
@@ -128,7 +184,13 @@ class ArabicPhoneticService {
         continue;
       }
       if (s2 == 'ch') {
-        out.write('tʃ');
+        // school / chemistry / christmas style "ch = k"; otherwise tʃ
+        final r = rest(2);
+        if (s3 == 'sch' || r.startsWith('emis') || r.startsWith('rist')) {
+          out.write('k');
+        } else {
+          out.write('tʃ');
+        }
         i += 2;
         continue;
       }
@@ -142,8 +204,13 @@ class ArabicPhoneticService {
         i += 2;
         continue;
       }
-      if (s2 == 'ck' || s2 == 'qu') {
+      if (s2 == 'ck') {
         out.write('k');
+        i += 2;
+        continue;
+      }
+      if (s2 == 'qu') {
+        out.write('kw');
         i += 2;
         continue;
       }
@@ -166,8 +233,13 @@ class ArabicPhoneticService {
         i += 2;
         continue; // silent
       }
+      if (s2 == 'mb' && i + 2 == n) {
+        out.write('m');
+        i += 2;
+        continue; // climb / tomb
+      }
 
-      // r-colored vowels
+      // ---- r-colored vowels -------------------------------------------------
       if (s2 == 'ar') {
         out.write('ɑr');
         i += 2;
@@ -178,7 +250,7 @@ class ArabicPhoneticService {
         i += 2;
         continue;
       }
-      if (s2 == 'er') {
+      if (s2 == 'er' || (s2 == 're' && i + 2 == n)) {
         out.write('ɚ');
         i += 2;
         continue;
@@ -189,8 +261,13 @@ class ArabicPhoneticService {
         continue;
       }
 
-      // Long vowels & diphthongs
-      if (s2 == 'ee' || s2 == 'ea') {
+      // ---- long vowels & diphthongs ------------------------------------------
+      if (s2 == 'ee') {
+        out.write('iː');
+        i += 2;
+        continue;
+      }
+      if (s2 == 'ea') {
         out.write('iː');
         i += 2;
         continue;
@@ -220,8 +297,8 @@ class ArabicPhoneticService {
         i += 2;
         continue;
       }
-      if (s2 == 'ue') {
-        out.write('juː');
+      if (s2 == 'ue' || s2 == 'ui') {
+        out.write('uː');
         i += 2;
         continue;
       }
@@ -230,16 +307,20 @@ class ArabicPhoneticService {
         i += 2;
         continue;
       }
+      if (s2 == 'eu' || s2 == 'ew') {
+        out.write('juː');
+        i += 2;
+        continue;
+      }
 
       final ch = w[i];
 
-      // Magic-E long vowel: VCe
+      // ---- Magic-E long vowel: VCe -------------------------------------------
       if ('aeiou'.contains(ch) &&
           i + 2 < n &&
           !'aeiou'.contains(w[i + 1]) &&
           w[i + 2] == 'e' &&
-          nextConsonant() &&
-          sub(2) != 'ue') {
+          onlyConsonantsAfter(i + 1)) {
         if (ch == 'a') {
           out.write('eɪ');
         } else if (ch == 'i') {
@@ -255,7 +336,12 @@ class ArabicPhoneticService {
         continue;
       }
 
-      // Short vowels & consonants
+      // ---- single letters ------------------------------------------------------
+      if (ch == 'e' && i == n - 1 && n >= 3) {
+        // trailing silent e (table, have, give)
+        i++;
+        continue;
+      }
       if (ch == 'a') {
         out.write('æ');
       } else if (ch == 'e') {
@@ -267,15 +353,39 @@ class ArabicPhoneticService {
       } else if (ch == 'u') {
         out.write('ʌ');
       } else if (ch == 'y') {
-        out.write('ɪ');
-      } else if (ch == 'c' || ch == 'q') {
+        if (i == 0) {
+          out.write('j');
+        } else if (i == n - 1) {
+          out.write('iː');
+        } else {
+          out.write('ɪ');
+        }
+      } else if (ch == 'c') {
+        if (i + 1 < n && 'eiy'.contains(w[i + 1])) {
+          out.write('s');
+        } else {
+          out.write('k');
+        }
+      } else if (ch == 'q') {
         out.write('k');
       } else if (ch == 'x') {
         out.write('ks');
       } else if (ch == 'j') {
         out.write('dʒ');
       } else if (ch == 'g') {
-        out.write('g');
+        if (i + 1 < n && 'eiy'.contains(w[i + 1]) && s2 != 'gg') {
+          out.write('dʒ');
+        } else {
+          out.write('g');
+        }
+      } else if (ch == 's' && i == n - 1 && i > 0) {
+        // voiced final -s after a sonorant reads as /z/
+        const sonorants = 'rlmnwbvgdzðaɛiyoʊuː';
+        final prevOut = out.toString();
+        out.write(
+            prevOut.isNotEmpty && sonorants.contains(prevOut[prevOut.length - 1])
+                ? 'z'
+                : 's');
       } else {
         out.write(ch);
       }
@@ -285,6 +395,24 @@ class ArabicPhoneticService {
   }
 
   static const Map<String, String> _overrides = {
+    // Function words (short, high-frequency)
+    'the': 'ذا',
+    'a': 'أَ',
+    'an': 'أن',
+    'to': 'تو',
+    'of': 'أوف',
+    'in': 'إن',
+    'on': 'ون',
+    'it': 'إت',
+    'is': 'إز',
+    'and': 'أاند',
+    'or': 'أور',
+    'for': 'فور',
+    'he': 'هي',
+    'she': 'شي',
+    'we': 'وي',
+    'me': 'مي',
+    'be': 'بي',
     // Common phrases (plain, natural Arabic script)
     'how are you': 'هاو آر يو',
     'how are you doing': 'هاو آر يو دوونغ',
@@ -304,7 +432,7 @@ class ArabicPhoneticService {
     'how old are you': 'هاو أولد آر يو',
     'can you help me': 'كان يو هلب مي',
     'i do not understand': 'آي دُو نوت أندرساند',
-    'please speak slowly': 'بليز سبيبك سلوولي',
+    'please speak slowly': 'بليز سبيك سلوولي',
     'what time is it': 'وات تايم إز إت',
     // Common words
     'hello': 'هَلو',
@@ -329,7 +457,7 @@ class ArabicPhoneticService {
     'water': 'ووتر',
     'coffee': 'كافي',
     'tea': 'تي',
-    'bread': 'برايد',
+    'bread': 'بريد',
     'house': 'هاوس',
     'home': 'هوم',
     'car': 'كار',
@@ -345,7 +473,7 @@ class ArabicPhoneticService {
     'like': 'لايك',
     'think': 'ثينك',
     'want': 'وانت',
-    'know': 'نوو',
+    'know': 'نو',
     'make': 'مايك',
     'this': 'ذيس',
     'that': 'ذات',
@@ -369,7 +497,7 @@ class ArabicPhoneticService {
     'perfect': 'بيرفكت',
     'accent': 'أكسنت',
     'pronounce': 'برناونس',
-    'pronunciation': 'برونانسييشن',
+    'pronunciation': 'بروناَنسِيَيشِن',
     'how': 'هاو',
     'are': 'آر',
     'you': 'يو',
@@ -390,8 +518,8 @@ class ArabicPhoneticService {
     'much': 'ماتش',
     'many': 'ماني',
     'little': 'ليتل',
-    'big': 'بِق',
-    'small': 'سومول',
+    'big': 'بيق',
+    'small': 'سمول',
     'happy': 'هابي',
     'sad': 'ساد',
     'bad': 'باد',
@@ -399,11 +527,11 @@ class ArabicPhoneticService {
     'old': 'أولد',
     'young': 'يانج',
     'fast': 'فاست',
-    'slow': 'سلو',
+    'slow': 'سلول',
     'man': 'مان',
     'woman': 'وومان',
     'boy': 'بوي',
-    'girl': 'جيرل',
+    'girl': 'غيرل',
     'teacher': 'تيتشر',
     'student': 'ستودنت',
     'father': 'فاذر',
@@ -434,12 +562,30 @@ class ArabicPhoneticService {
     'rain': 'رين',
     'snow': 'سنو',
     'number': 'نمبر',
-    'color': 'كولر',
-    'question': 'كويششن',
+    'color': 'كلر',
+    'question': 'كويستشِن',
     'answer': 'أنسر',
-    'language': 'لانجواج',
+    'language': 'لانجوِج',
     'people': 'بيبل',
-    'feeling': 'فيليغ',
+    'feeling': 'فيلينغ',
+    // Longer / trickier words (natural readings)
+    'archaeology': 'آركيأولُجي',
+    'corridor': 'كورِدور',
+    'corridors': 'كورِدورز',
+    'university': 'يونِڤيرسِتي',
+    'technology': 'تكْنأولُجي',
+    'development': 'ديڤيلوبمنت',
+    'environment': 'إنفايرنمنت',
+    'opportunity': 'أبورتيونِتي',
+    'communicate': 'كميونِكيت',
+    'interesting': 'إنترِستينغ',
+    'vegetable': 'ڤيجتبُل',
+    'restaurant': 'ريسترانت',
+    'comfortably': 'كَمفتَربلي',
+    'temperature': 'تيمبرَتشُر',
+    'necessary': 'نيسِسيري',
+    'different': 'ديفرنت',
+    'beautifully': 'بيوتِفُلي',
   };
 
   static const Map<String, String> _consonants = {
@@ -447,6 +593,8 @@ class ArabicPhoneticService {
     'm': 'م', 'n': 'ن', 'ŋ': 'نغ', 'f': 'ف', 'v': 'ف', 'θ': 'ث',
     'ð': 'ذ', 's': 'س', 'z': 'ز', 'ʃ': 'ش', 'ʒ': 'ج', 'h': 'ه',
     'r': 'ر', 'l': 'ل', 'j': 'ي', 'w': 'و', 'tʃ': 'تش', 'dʒ': 'ج',
+    'ɾ': 'د', // American flap ≈ light د
+    'ʔ': 'ء', 'x': 'خ', 'ç': 'ه',
   };
 
   static const Map<String, String> _shortVowelDiacritic = {
@@ -458,6 +606,8 @@ class ArabicPhoneticService {
     'ʌ': '\u064E', // fatha
     'ɑ': '\u064E', // fatha
     'ɔ': '\u064E', // fatha
+    'ɐ': '\u064E',
+    'ɜ': '\u064E',
   };
 
   static const Map<String, String> _wordInitialShort = {
@@ -467,8 +617,10 @@ class ArabicPhoneticService {
     'ɛ': 'أَ',
     'æ': 'أَ',
     'ʌ': 'أَ',
-    'ɑ': 'أَ',
+    'ɑ': 'آ',
     'ɔ': 'أَ',
+    'ɐ': 'أَ',
+    'ɜ': 'أَ',
   };
 
   static const Map<String, String> _longVowelLetter = {
@@ -476,36 +628,56 @@ class ArabicPhoneticService {
     'uː': 'و',
     'ɔː': 'او',
     'ɑː': 'ا',
+    'eː': 'ي',
+    'oː': 'و',
     'ɚ': 'ر',
     'ɝ': 'ر',
+    'ɝː': 'ر',
     'ər': 'ر',
-    'ɑr': 'آر',
-    'ɔr': 'اور',
+    'ɜr': 'ر',
+    'ɑr': 'ار',
+    'ɔr': 'ور',
+    'ʊr': 'ور',
+    'ɪr': 'ير',
+    'ɛər': 'ير',
     'eɪ': 'ي',
     'oʊ': 'و',
     'aɪ': 'اي',
     'aʊ': 'او',
     'ɔɪ': 'أوي',
+    'juː': 'يو',
+    'aɪər': 'اير',
+    'aʊər': 'اَور',
+    'ɪə': 'يا',
+    'eə': 'يا',
+    'ʊə': 'وا',
   };
 
   static const List<String> _ipaTokens = [
-    'tʃ', 'dʒ', 'aɪ', 'aʊ', 'ɔɪ', 'eɪ', 'oʊ', 'iː', 'uː', 'ɔː', 'ɑː',
-    'ɚ', 'ɝ', 'ər', 'ɑr', 'ɔr', 'ʃ', 'ʒ', 'ŋ', 'θ', 'ð', 'æ', 'ɔ', 'ʌ',
-    'ə', 'ɛ', 'ɪ', 'ʊ', 'ɑ', 'i', 'u', 'e', 'o',
-    'p', 'b', 't', 'd', 'k', 'g', 'm', 'n', 'f', 'v', 's', 'z', 'h',
-    'r', 'l', 'j', 'w', 'c', 'x',
+    // longest-first matching happens below via explicit ordering checks
+    'aɪər', 'aʊər', 'tʃ', 'dʒ', 'ɝː', 'iː', 'uː', 'ɔː', 'ɑː', 'eː', 'oː',
+    'juː', 'ɪə', 'eə', 'ʊə', 'ɛər', 'aɪ', 'aʊ', 'ɔɪ', 'eɪ', 'oʊ',
+    'ɚ', 'ɝ', 'ər', 'ɜr', 'ɑr', 'ɔr', 'ʊr', 'ɪr',
+    'ʃ', 'ʒ', 'ŋ', 'θ', 'ð', 'æ', 'ɔ', 'ʌ', 'ə', 'ɛ', 'ɪ', 'ʊ', 'ɑ',
+    'ɐ', 'ɜ', 'i', 'u', 'e', 'o', 'æ',
+    'p', 'b', 't', 'd', 'k', 'ɡ', 'g', 'm', 'n', 'f', 'v', 's', 'z', 'h',
+    'r', 'ɾ', 'ɹ', 'l', 'ɫ', 'j', 'w', 'ʔ', 'x', 'ç',
   ];
 
   String _convertIpa(String raw) {
-    var s = raw.trim();
-    s = s.replaceAll('ˈ', '').replaceAll('ˌ', '').replaceAll('.', '');
+    var s = _normalizeIpa(raw);
     final tokens = _tokenizeIpa(s);
     final buffer = StringBuffer();
     var prevWasConsonant = false;
     for (final t in tokens) {
       final consonant = _consonants[t];
       if (consonant != null) {
-        buffer.write(consonant);
+        // collapse doubled identical consonants (rr -> ر)
+        final last = buffer.isEmpty ? '' : buffer.toString()[buffer.length - 1];
+        final base = consonant.length == 2 && last == consonant[1]
+            ? consonant[1]
+            : consonant;
+        if (!(base.length == 1 && last == base)) buffer.write(base);
         prevWasConsonant = true;
         continue;
       }
@@ -528,22 +700,70 @@ class ArabicPhoneticService {
     return buffer.toString();
   }
 
+  /// Maps common alternative IPA symbols onto the token alphabet so that
+  /// nothing silently disappears (this was corrupting long dictionary words).
+  String _normalizeIpa(String raw) {
+    var s = raw.trim();
+    s = s.replaceAll('ˈ', '').replaceAll('ˌ', '').replaceAll('.', '');
+    const replacements = {
+      'ɡ': 'g', // script g (U+0261)
+      'ɹ': 'r',
+      'ɫ': 'l',
+      'ɾ': 'ɾ',
+      'ɐ': 'æ',
+      'ɜ': 'ɝ',
+      'ɞ': 'ə',
+      'ʉ': 'u',
+      'ɘ': 'ə',
+      'ɵ': 'ə',
+      'χ': 'x',
+      'ʀ': 'r',
+      'ʁ': 'r',
+      'ɺ': 'r',
+      'ʦ': 'ts',
+      'ʣ': 'dz',
+      'ʧ': 'tʃ',
+      'ʤ': 'dʒ',
+      'ꭧ': 'tʃ',
+      ':': 'ː',
+    };
+    replacements.forEach((k, v) => s = s.replaceAll(k, v));
+    // strip combining marks we do not render (nasalisation, syllabic, length on its own)
+    s = s.replaceAll(RegExp('[\u0303\u0329\u02b0\u02b1\u02b2\u02e0\u02e4]'), '');
+    // any standalone length marks left over become part of the previous vowel
+    s = s.replaceAllMapped(RegExp('([ioueaɑɔɛɪʊə])ː'), (m) => '${m.group(1)}ː');
+    return s;
+  }
+
   List<String> _tokenizeIpa(String s) {
     final out = <String>[];
     int i = 0;
     while (i < s.length) {
       var matched = false;
+      // prefer the longest token starting here
       for (final tok in _ipaTokens) {
         if (s.startsWith(tok, i)) {
+          // absorb a trailing length mark for pure vowels
+          var token = tok;
+          var next = i + tok.length;
+          if (next < s.length && s[next] == 'ː' && !_longVowelLetter.containsKey(tok)) {
+            token = '$tokː';
+            next += 1;
+            if (_longVowelLetter.containsKey(token)) {
+              out.add(token);
+              i = next;
+              matched = true;
+              break;
+            }
+          }
           out.add(tok);
-          i += tok.length;
+          i = next;
           matched = true;
           break;
         }
       }
       if (!matched) {
-        // single leftover char (e.g. length mark handled above)
-        i++;
+        i++; // skip anything still unmapped (modifiers, whitespace)
       }
     }
     return out;

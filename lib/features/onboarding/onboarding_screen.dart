@@ -36,8 +36,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final titles = [l10n.onboardingTitle1, l10n.onboardingTitle2, l10n.onboardingTitle3];
-    final subs = [l10n.onboardingSub1, l10n.onboardingSub2, l10n.onboardingSub3];
+    final palette = AppPalette.of(context);
 
     return Scaffold(
       body: SafeArea(
@@ -60,7 +59,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 controller: _pageController,
                 itemCount: 3,
                 onPageChanged: (i) => setState(() => _page = i),
-itemBuilder: (context, index) {
+                itemBuilder: (context, index) {
                   return LayoutBuilder(
                     builder: (context, constraints) {
                       return SingleChildScrollView(
@@ -69,35 +68,8 @@ itemBuilder: (context, index) {
                           constraints: BoxConstraints(
                             minHeight: constraints.maxHeight,
                           ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const AppLogo(width: 150, showText: false),
-                              const SizedBox(height: 40),
-                              Text(
-                                titles[index],
-                                textAlign: TextAlign.center,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headlineSmall
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.w800,
-                                      color: AppColors.text,
-                                    ),
-                              ),
-                              const SizedBox(height: 14),
-                              Text(
-                                subs[index],
-                                textAlign: TextAlign.center,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(
-                                      color: AppColors.textSoft,
-                                      height: 1.6,
-                                    ),
-                              ),
-                            ],
+                          child: Center(
+                            child: _buildSlide(index, l10n, palette),
                           ),
                         ),
                       );
@@ -116,7 +88,9 @@ itemBuilder: (context, index) {
                   width: _page == i ? 24 : 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: _page == i ? AppColors.primary : AppColors.divider,
+                    color: _page == i
+                        ? AppColors.primary
+                        : palette.divider,
                     borderRadius: AppRadius.pill,
                   ),
                 ),
@@ -157,6 +131,220 @@ itemBuilder: (context, index) {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSlide(int index, AppLocalizations l10n, AppPalette palette) {
+    switch (index) {
+      case 0:
+        return _SlideScaffold(
+          visual: _GirlImage(),
+          title: l10n.onboardingTitle1,
+          subtitle: l10n.onboardingSub1,
+          palette: palette,
+        );
+      case 1:
+        return _SlideScaffold(
+          visual: _SafeHeart(),
+          title: l10n.onboardingTitle2,
+          subtitle: l10n.onboardingSub2,
+          palette: palette,
+        );
+      default:
+        return _BrandSlide(palette: palette);
+    }
+  }
+}
+
+/// Common slide layout: visual on top, title + subtitle under it.
+class _SlideScaffold extends StatelessWidget {
+  final Widget visual;
+  final String title;
+  final String subtitle;
+  final AppPalette palette;
+  const _SlideScaffold({
+    required this.visual,
+    required this.title,
+    required this.subtitle,
+    required this.palette,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        visual,
+        const SizedBox(height: 36),
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: palette.text,
+              ),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          subtitle,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: palette.textSoft,
+                height: 1.6,
+              ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Slide 1 — the app's own cartoon girl image, clean and professional.
+class _GirlImage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: AppRadius.xl,
+        border: Border.all(color: AppPalette.of(context).divider),
+      ),
+      child: ClipRRect(
+        borderRadius: AppRadius.lg,
+        child: Image.asset(
+          'assets/images/onboarding_girl.jpeg',
+          height: 300,
+          fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) => SizedBox(
+            height: 300,
+            child: Icon(
+              Icons.face_retouching_natural_rounded,
+              size: 120,
+              color: AppPalette.of(context).primary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Slide 2 — a prominent heart that communicates safety/security.
+class _SafeHeart extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 190,
+      height: 190,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: AppColors.danger.withOpacity(0.08),
+          border: Border.all(color: AppColors.danger.withOpacity(0.18)),
+        ),
+        child: Center(
+          child: Container(
+            width: 130,
+            height: 130,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.danger,
+                  AppColors.danger.withOpacity(0.75)
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.danger.withOpacity(0.35),
+                  blurRadius: 24,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.favorite_rounded,
+              color: Colors.white,
+              size: 64,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Slide 3 — the complete personal logo with full brand identity.
+class _BrandSlide extends StatelessWidget {
+  final AppPalette palette;
+  const _BrandSlide({required this.palette});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const FullLogo(width: 230),
+        const SizedBox(height: 22),
+        Text(
+          l10n.onboardingBrandAr,
+          textAlign: TextAlign.center,
+          textDirection: TextDirection.rtl,
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: palette.text,
+              ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          l10n.onboardingOwnerAr,
+          textAlign: TextAlign.center,
+          textDirection: TextDirection.rtl,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: palette.secondary,
+              ),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          l10n.onboardingBrandEn,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.5,
+                color: palette.text,
+              ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          l10n.onboardingOwnerEn,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: palette.secondary,
+              ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+          decoration: BoxDecoration(
+            color: palette.surfaceAlt,
+            borderRadius: AppRadius.pill,
+          ),
+          child: Text(
+            l10n.onboardingTagline,
+            textAlign: TextAlign.center,
+            textDirection: TextDirection.rtl,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: palette.primary,
+                ),
+          ),
+        ),
+      ],
     );
   }
 }

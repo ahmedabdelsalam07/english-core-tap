@@ -20,6 +20,7 @@ class SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
     return Container(
       width: double.infinity,
       padding: padding,
@@ -36,7 +37,7 @@ class SectionCard extends StatelessWidget {
             Row(
               children: [
                 if (icon != null) ...[
-                  Icon(icon, color: AppColors.primary, size: 20),
+                  Icon(icon, color: palette.primary, size: 20),
                   const SizedBox(width: 8),
                 ],
                 Expanded(

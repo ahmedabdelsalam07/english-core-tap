@@ -24,13 +24,12 @@ class ResultScreen extends ConsumerStatefulWidget {
 
 class _ResultScreenState extends ConsumerState<ResultScreen> {
   late PronunciationResult _result;
-  late VoiceGender _voice;
+  VoiceGender _voice = VoiceGender.auto;
 
   @override
   void initState() {
     super.initState();
     _result = widget.result;
-    _voice = widget.result.voice;
   }
 
   Future<void> _share() async {
@@ -45,17 +44,22 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
       ..writeln('${l10n.resultTranslation}:')
       ..writeln(_result.arabicTranslation)
       ..writeln()
-      ..writeln('â€” ENGLISH CORE (MR. THARWAT TAWFIQ)');
+      ..writeln('— ENGLISH CORE (MR. THARWAT TAWFIQ)');
     await Share.share(text.toString(), subject: 'ENGLISH CORE');
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final settings = ref.watch(settingsControllerProvider);
     final favorites = ref.watch(favoritesControllerProvider);
     final isFavorite = favorites.any(
       (e) => e.result.englishText == _result.englishText,
     );
+    // The result screen follows the app-wide default voice.
+    _voice = settings.defaultVoice;
+    final showPhonetic =
+        settings.showArabicPhonetic && _result.arabicPhonetic.isNotEmpty;
 
     return Scaffold(
       body: SafeArea(
@@ -71,11 +75,15 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                     _EnglishSection(
                       result: _result,
                       voice: _voice,
-                      onVoiceChanged: (v) => setState(() => _voice = v),
+                      onVoiceChanged: (v) => ref
+                          .read(settingsControllerProvider.notifier)
+                          .setDefaultVoice(v),
                     ),
                     const SizedBox(height: 16),
-                    _ArabicPhoneticSection(result: _result),
-                    const SizedBox(height: 16),
+                    if (showPhonetic) ...[
+                      _ArabicPhoneticSection(result: _result),
+                      const SizedBox(height: 16),
+                    ],
                     _TranslationSection(result: _result),
                     if (_result.nativeAudioUrl != null) ...[
                       const SizedBox(height: 16),
@@ -114,12 +122,13 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
             tooltip: l10n.resultShare,
             icon: const Icon(Icons.share_rounded),
           ),
+          // HEART — favorite toggle, clearly visible in light & dark.
           IconButton(
             onPressed: () async {
               final controller = ref.read(favoritesControllerProvider.notifier);
               await controller.toggle(_result);
               final nowFav = controller.isFavorite(_result.englishText);
-              _result = _result.copyWith(favorite: nowFav);
+              setState(() => _result = _result.copyWith(favorite: nowFav));
               if (mounted) {
                 ScaffoldMessenger.of(context)
                   ..hideCurrentSnackBar()
@@ -141,9 +150,12 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
               transitionBuilder: (child, anim) =>
                   ScaleTransition(scale: anim, child: child),
               child: Icon(
-                isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                isFavorite
+                    ? Icons.favorite_rounded
+                    : Icons.favorite_border_rounded,
                 key: ValueKey(isFavorite),
-                color: isFavorite ? AppColors.danger : null,
+                size: 26,
+                color: isFavorite ? AppColors.danger : AppColors.danger,
               ),
             ),
           ),
@@ -166,6 +178,7 @@ class _EnglishSection extends ConsumerWidget {
 @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final settings = ref.watch(settingsControllerProvider);
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -195,13 +208,15 @@ class _EnglishSection extends ConsumerWidget {
             textDirection: TextDirection.ltr,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
-                  color: AppColors.text,
+                  color: AppPalette.of(context).text,
                 ),
           ),
           const SizedBox(height: 12),
           _VoiceSelector(voice: voice, onChanged: onVoiceChanged),
           const SizedBox(height: 14),
           AudioPlayerWidget(
+            key: ValueKey('${result.englishText}_${result.voice.name}_'
+                '${settings.playbackSpeed}'),
             text: result.englishText,
             voice: voice,
           ),
@@ -218,17 +233,18 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 18, color: AppColors.primary),
+        Icon(icon, size: 18, color: palette.primary),
         const SizedBox(width: 6),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: AppColors.textSoft,
+            color: palette.textSoft,
           ),
         ),
       ],
@@ -271,12 +287,13 @@ class _ArabicPhoneticSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final palette = AppPalette.of(context);
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: AppColors.softGradient,
+        gradient: palette.softGradient,
         borderRadius: AppRadius.lg,
-        border: Border.all(color: AppColors.primary.withOpacity(0.12)),
+        border: Border.all(color: palette.primary.withOpacity(0.25)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -292,12 +309,12 @@ class _ArabicPhoneticSection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          Text(
+          SelectableText(
             result.arabicPhonetic,
             textDirection: TextDirection.rtl,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
-                  color: AppColors.secondary,
+                  color: palette.secondary,
                   height: 1.5,
                 ),
           ),
@@ -338,12 +355,12 @@ class _TranslationSection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          Text(
-            result.arabicTranslation,
+          SelectableText(
+            result.arabicTranslation.isEmpty ? '—' : result.arabicTranslation,
             textDirection: TextDirection.rtl,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: AppColors.text,
+                  color: AppPalette.of(context).text,
                   height: 1.5,
                 ),
           ),
@@ -353,21 +370,16 @@ class _TranslationSection extends StatelessWidget {
   }
 }
 
-class _NativeAudioCard extends ConsumerStatefulWidget {
+class _NativeAudioCard extends ConsumerWidget {
   final String url;
   const _NativeAudioCard({required this.url});
 
   @override
-  ConsumerState<_NativeAudioCard> createState() => _NativeAudioCardState();
-}
-
-class _NativeAudioCardState extends ConsumerState<_NativeAudioCard> {
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final audio = ref.watch(audioPlayerServiceProvider);
     final playing = ref.watch(audioPlayerServiceProvider).playingUrl.value;
-    final isCurrent = playing == widget.url;
+    final isCurrent = playing == url;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -376,7 +388,8 @@ class _NativeAudioCardState extends ConsumerState<_NativeAudioCard> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.record_voice_over_rounded, color: AppColors.primary),
+          Icon(Icons.record_voice_over_rounded,
+              color: AppPalette.of(context).primary),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -385,7 +398,8 @@ class _NativeAudioCardState extends ConsumerState<_NativeAudioCard> {
             ),
           ),
           IconButton.filled(
-            onPressed: isCurrent ? () => audio.stop() : () => audio.play(widget.url),
+            onPressed:
+                isCurrent ? () => audio.stop() : () => audio.play(url),
             style: IconButton.styleFrom(backgroundColor: AppColors.primary),
             icon: Icon(isCurrent ? Icons.stop_rounded : Icons.play_arrow_rounded),
           ),
@@ -400,7 +414,11 @@ class _NativeAudioCardState extends ConsumerState<_NativeAudioCard> {
 class AudioPlayerWidget extends ConsumerStatefulWidget {
   final String text;
   final VoiceGender voice;
-  const AudioPlayerWidget({super.key, required this.text, required this.voice});
+  const AudioPlayerWidget({
+    super.key,
+    required this.text,
+    required this.voice,
+  });
 
   @override
   ConsumerState<AudioPlayerWidget> createState() => _AudioPlayerWidgetState();
@@ -409,6 +427,7 @@ class AudioPlayerWidget extends ConsumerStatefulWidget {
 class _AudioPlayerWidgetState extends ConsumerState<AudioPlayerWidget> {
   Timer? _timer;
   double _speed = 1.0;
+  bool _speedInitialized = false;
   final int _estimatedMsPerChar = 90;
 
   @override
@@ -423,13 +442,23 @@ class _AudioPlayerWidgetState extends ConsumerState<AudioPlayerWidget> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final palette = AppPalette.of(context);
     final tts = ref.watch(ttsServiceProvider);
-    final speaking = ref.watch(ttsServiceProvider).isSpeaking.value;
-    final paused = ref.watch(ttsServiceProvider).isPaused.value;
-    final progress = ref.watch(ttsServiceProvider).progress.value;
+    final settings = ref.watch(settingsControllerProvider);
+
+    // Start from the persisted speed preference exactly once.
+    if (!_speedInitialized) {
+      _speedInitialized = true;
+      _speed = settings.playbackSpeed;
+    }
+
+    final speaking = tts.isSpeaking.value;
+    final paused = tts.isPaused.value;
+    final progress = tts.progress.value;
 
     final duration = _estimatedDuration;
-    final current = Duration(milliseconds: (duration.inMilliseconds * progress).round());
+    final current =
+        Duration(milliseconds: (duration.inMilliseconds * progress).round());
 
     return Column(
       children: [
@@ -504,44 +533,42 @@ onTap: () async {
           children: [
             Text(
               _fmt(current),
-              style: const TextStyle(fontSize: 11, color: AppColors.textSoft),
+              style: TextStyle(fontSize: 11, color: palette.textSoft),
             ),
             const Spacer(),
             Text(
               _fmt(duration),
-              style: const TextStyle(fontSize: 11, color: AppColors.textSoft),
+              style: TextStyle(fontSize: 11, color: palette.textSoft),
             ),
           ],
         ),
         const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 6,
+          runSpacing: 6,
           children: [
-            const Icon(Icons.speed_rounded, size: 16, color: AppColors.textSoft),
-            const SizedBox(width: 8),
             for (final s in playbackSpeeds)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 3),
-                child: ChoiceChip(
-                  label: Text('${s}x'),
-                  selected: _speed == s,
-                  onSelected: (_) async {
-                    setState(() => _speed = s);
-                    await tts.setSpeed(s);
-                    ref
-                        .read(settingsControllerProvider.notifier)
-                        .setPlaybackSpeed(s);
-                  },
-                  visualDensity: VisualDensity.compact,
-                  labelStyle: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: _speed == s ? Colors.white : AppColors.primary,
-                  ),
-                  selectedColor: AppColors.primary,
-                  backgroundColor: AppColors.lavender,
-                  showCheckmark: false,
+              ChoiceChip(
+                label: Text('${s}x'),
+                selected: _speed == s,
+                onSelected: (_) async {
+                  setState(() => _speed = s);
+                  // Apply to the engine immediately and persist app-wide.
+                  await tts.setSpeed(s);
+                  ref
+                      .read(settingsControllerProvider.notifier)
+                      .setPlaybackSpeed(s);
+                },
+                visualDensity: VisualDensity.compact,
+                labelStyle: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: _speed == s ? Colors.white : palette.primary,
                 ),
+                selectedColor: AppColors.primary,
+                backgroundColor: palette.surfaceAlt,
+                showCheckmark: false,
               ),
           ],
         ),
@@ -599,6 +626,7 @@ class _WaveformState extends State<_Waveform>
 
   @override
   Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
@@ -617,7 +645,8 @@ class _WaveformState extends State<_Waveform>
                 height: 40 * animated,
                 margin: const EdgeInsets.symmetric(horizontal: 2),
                 decoration: BoxDecoration(
-                  color: passed ? AppColors.primary : AppColors.lavender,
+                  color:
+                      passed ? palette.primary : palette.divider,
                   borderRadius: BorderRadius.circular(4),
                 ),
               );

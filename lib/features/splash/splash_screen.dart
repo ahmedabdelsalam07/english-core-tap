@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../providers/services_provider.dart';
+import '../../widgets/app_logo.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -73,30 +74,26 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   ),
                   child: FadeTransition(
                     opacity: _controller,
-                    child: Column(
+                    child: const Column(
                       children: [
-                        Image.asset(
-                          'assets/logo/english_core_tap.png',
-                          width: 200,
-                          height: 200 * 600 / 1000,
-                          fit: BoxFit.contain,
-                        ),
-                        const SizedBox(height: 28),
-                        const Text(
-                          'ENGLISH CORE',
+                        // LOGO ONLY — large, original aspect ratio preserved.
+                        LogoMark(size: 230),
+                        SizedBox(height: 30),
+                        Text(
+                          'English Core',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 26,
+                            fontSize: 28,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 3,
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        const Text(
-                          'MR. THARWAT TAWFIQ',
+                        SizedBox(height: 6),
+                        Text(
+                          'Mr Tharwat Tawfiq',
                           style: TextStyle(
                             color: Colors.white70,
-                            fontSize: 14,
+                            fontSize: 15,
                             fontWeight: FontWeight.w500,
                             letterSpacing: 1.5,
                           ),

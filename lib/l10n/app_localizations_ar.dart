@@ -28,25 +28,38 @@ class AppLocalizationsAr extends AppLocalizations {
   String get splashSub => 'MR. THARWAT TAWFIQ';
 
   @override
-  String get onboardingTitle1 => 'تعلّم النطق الأمريكي بسهولة';
+  String get onboardingTitle1 => 'أهلًا بك في English Core';
 
   @override
   String get onboardingSub1 =>
       'اكتب أي كلمة أو جملة واحصل على نطق أمريكي واضح مع معناها بالعربية.';
 
   @override
-  String get onboardingTitle2 => 'اسمع الكلمات بصوت واضح وطبيعي';
+  String get onboardingTitle2 => 'أنت في أمان';
 
   @override
-  String get onboardingSub2 =>
-      'استمع إلى الكلمات والجمل بصوت أمريكي طبيعي، صوت رجل أو امرأة.';
+  String get onboardingSub2 => 'مكانك الآمن لتتعلم وتنطق بثقة بدون خوف.';
 
   @override
-  String get onboardingTitle3 => 'ترجم، انطق، واحفظ كلماتك المفضلة';
+  String get onboardingTitle3 => 'انجلشكور';
 
   @override
-  String get onboardingSub3 =>
-      'ترجم، انطق، واحفظ كلماتك المفضلة لمراجعتها في أي وقت.';
+  String get onboardingSub3 => 'طريقك الآمن لتحسين لغتك.';
+
+  @override
+  String get onboardingBrandAr => 'انجلشكور';
+
+  @override
+  String get onboardingOwnerAr => 'ثروت توفيق';
+
+  @override
+  String get onboardingBrandEn => 'English Core';
+
+  @override
+  String get onboardingOwnerEn => 'Mr Tharwat Tawfiq';
+
+  @override
+  String get onboardingTagline => 'طريقك الآمن لتحسين لغتك';
 
   @override
   String get onboardingStart => 'ابدأ الآن';
@@ -56,6 +69,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get onboardingSkip => 'تخطي';
+
+  @override
+  String get homeWelcome => 'أهلًا';
 
   @override
   String get loginTitle => 'مرحبًا بك';
