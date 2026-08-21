@@ -37,7 +37,7 @@ jobs:
         run: flutter pub get
 
       - name: Build web
-        run: flutter build web --release --base-href /english-core-tap/
+        run: flutter build web --release --base-href /english-core-tap/ --pwa-strategy=none
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

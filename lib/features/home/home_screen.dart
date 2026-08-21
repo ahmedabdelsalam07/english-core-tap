@@ -45,6 +45,50 @@ static const List<String> _examples = [
   void initState() {
     super.initState();
     _listenForResult();
+    _autoCheckForUpdate();
+  }
+
+  /// Silent update check once per app launch: if a newer GitHub release
+  /// exists, offer it immediately — users never have to hunt for updates.
+  Future<void> _autoCheckForUpdate() async {
+    await Future<void>.delayed(const Duration(seconds: 2));
+    if (!mounted) return;
+    try {
+      final info = await ref.read(updateCheckerProvider).checkForUpdate();
+      if (!mounted || !info.updateAvailable) return;
+      final l10n = AppLocalizations.of(context);
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l10n.updateNewVersion(info.latestTag)),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Text(
+                info.releaseNotes.isEmpty ? info.latestTag : info.releaseNotes,
+                style: const TextStyle(fontSize: 13),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(l10n.updateLater),
+            ),
+            FilledButton.icon(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                ref.read(updateCheckerProvider).applyUpdate(info);
+              },
+              icon: const Icon(Icons.download_rounded, size: 18),
+              label: Text(l10n.updateNow),
+            ),
+          ],
+        ),
+      );
+    } catch (_) {
+      // Silent failure: connectivity hiccups must not annoy the user.
+    }
   }
 
   void _listenForResult() {

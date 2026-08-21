@@ -416,6 +416,26 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsAppVersion => 'الإصدار';
 
   @override
+  String get settingsCheckUpdate => 'التحقق من التحديثات';
+
+  @override
+  String updateNewVersion(String version) {
+    return 'يوجد إصدار جديد $version';
+  }
+
+  @override
+  String get updateUpToDate => 'أنت تستخدم أحدث إصدار';
+
+  @override
+  String get updateNow => 'حدّث الآن';
+
+  @override
+  String get updateLater => 'لاحقًا';
+
+  @override
+  String get updateFailed => 'تعذر التحقق من التحديثات. حاول مرة أخرى لاحقًا.';
+
+  @override
   String get aboutTitle => 'حول التطبيق';
 
   @override

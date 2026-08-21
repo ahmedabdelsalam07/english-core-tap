@@ -884,6 +884,42 @@ abstract class AppLocalizations {
   /// **'Version'**
   String get settingsAppVersion;
 
+  /// No description provided for @settingsCheckUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for updates'**
+  String get settingsCheckUpdate;
+
+  /// No description provided for @updateNewVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'New version {version} is available'**
+  String updateNewVersion(String version);
+
+  /// No description provided for @updateUpToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'You are on the latest version'**
+  String get updateUpToDate;
+
+  /// No description provided for @updateNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Update now'**
+  String get updateNow;
+
+  /// No description provided for @updateLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get updateLater;
+
+  /// No description provided for @updateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not check for updates. Try again later.'**
+  String get updateFailed;
+
   /// No description provided for @aboutTitle.
   ///
   /// In en, this message translates to:

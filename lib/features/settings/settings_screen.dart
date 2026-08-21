@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/constants.dart';
 import '../../core/enums.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
+import '../../data/services/update_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/history_provider.dart';
@@ -283,9 +285,15 @@ const ButtonSegment(
             ),
           ),
           const SizedBox(height: 16),
+          _SettingsSection(
+            title: l10n.settingsCheckUpdate,
+            icon: Icons.system_update_alt_rounded,
+            child: _UpdateSection(palette: palette),
+          ),
+          const SizedBox(height: 16),
           Center(
             child: Text(
-              '${l10n.settingsAppVersion} 1.0.0',
+              '${l10n.settingsAppVersion} ${Constants.appVersion}',
               style: TextStyle(
                 fontSize: 12,
                 color: palette.textSoft,
@@ -393,6 +401,103 @@ class _SettingRow extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _UpdateSection extends StatefulWidget {
+  final AppPalette palette;
+  const _UpdateSection({required this.palette});
+
+  @override
+  State<_UpdateSection> createState() => _UpdateSectionState();
+}
+
+class _UpdateSectionState extends State<_UpdateSection> {
+  final UpdateService _updater = UpdateService();
+  bool _checking = false;
+
+  Future<void> _check() async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _checking = true);
+    try {
+      final info = await _updater.checkForUpdate();
+      if (!mounted) return;
+      if (info.updateAvailable) {
+        await _showUpdateDialog(info);
+      } else {
+        messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(l10n.updateUpToDate)));
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(l10n.updateFailed)));
+    } finally {
+      if (mounted) setState(() => _checking = false);
+    }
+  }
+
+  Future<void> _showUpdateDialog(UpdateInfo info) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.updateNewVersion(info.latestTag)),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Text(
+              info.releaseNotes.isEmpty ? info.latestTag : info.releaseNotes,
+              style: const TextStyle(fontSize: 13),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n.updateLater),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            icon: const Icon(Icons.download_rounded, size: 18),
+            label: Text(l10n.updateNow),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      await _updater.applyUpdate(info);
+      // On web applyUpdate reloads the page; on Android it opens the browser.
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            '${l10n.settingsAppVersion} ${Constants.appVersion}',
+            style: TextStyle(color: widget.palette.textSoft, fontSize: 13),
+          ),
+        ),
+        FilledButton.tonalIcon(
+          onPressed: _checking ? null : _check,
+          icon: _checking
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.refresh_rounded, size: 18),
+          label: Text(l10n.settingsCheckUpdate),
+        ),
+      ],
     );
   }
 }

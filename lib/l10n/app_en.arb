@@ -143,6 +143,17 @@
   "settingsTerms": "Terms of Use",
   "settingsAbout": "About English Core",
   "settingsAppVersion": "Version",
+  "settingsCheckUpdate": "Check for updates",
+  "updateNewVersion": "New version {version} is available",
+  "@updateNewVersion": {
+    "placeholders": {
+      "version": { "type": "String" }
+    }
+  },
+  "updateUpToDate": "You are on the latest version",
+  "updateNow": "Update now",
+  "updateLater": "Later",
+  "updateFailed": "Could not check for updates. Try again later.",
 
   "aboutTitle": "About",
   "aboutName": "ENGLISH CORE",

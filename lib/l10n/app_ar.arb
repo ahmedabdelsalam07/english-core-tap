@@ -143,6 +143,17 @@
   "settingsTerms": "شروط الاستخدام",
   "settingsAbout": "حول English Core",
   "settingsAppVersion": "الإصدار",
+  "settingsCheckUpdate": "التحقق من التحديثات",
+  "updateNewVersion": "يوجد إصدار جديد {version}",
+  "@updateNewVersion": {
+    "placeholders": {
+      "version": { "type": "String" }
+    }
+  },
+  "updateUpToDate": "أنت تستخدم أحدث إصدار",
+  "updateNow": "حدّث الآن",
+  "updateLater": "لاحقًا",
+  "updateFailed": "تعذر التحقق من التحديثات. حاول مرة أخرى لاحقًا.",
 
   "aboutTitle": "حول التطبيق",
   "aboutName": "ENGLISH CORE",

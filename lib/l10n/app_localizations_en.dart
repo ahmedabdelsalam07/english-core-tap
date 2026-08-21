@@ -424,6 +424,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAppVersion => 'Version';
 
   @override
+  String get settingsCheckUpdate => 'Check for updates';
+
+  @override
+  String updateNewVersion(String version) {
+    return 'New version $version is available';
+  }
+
+  @override
+  String get updateUpToDate => 'You are on the latest version';
+
+  @override
+  String get updateNow => 'Update now';
+
+  @override
+  String get updateLater => 'Later';
+
+  @override
+  String get updateFailed => 'Could not check for updates. Try again later.';
+
+  @override
   String get aboutTitle => 'About';
 
   @override

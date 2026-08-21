@@ -7,6 +7,7 @@ import '../data/services/dictionary_service.dart';
 import '../data/services/speech_service.dart';
 import '../data/services/translation_service.dart';
 import '../data/services/tts_service.dart';
+import '../data/services/update_service.dart';
 
 final ttsServiceProvider = Provider<TtsService>((ref) {
   final service = TtsService();
@@ -46,6 +47,10 @@ final arabicPhoneticServiceProvider =
 
 final authServiceProvider = Provider<AuthService>((ref) {
   return AuthService.create();
+});
+
+final updateCheckerProvider = Provider<UpdateService>((ref) {
+  return UpdateService();
 });
 
 /// Firebase Auth is always configured in production builds.
