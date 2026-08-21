@@ -457,6 +457,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'An app that helps you learn correct American English pronunciation with Arabic translation and Arabic phonetic transcription.';
 
   @override
+  String get aboutProducts =>
+      'This application is one of English Core\'s products, developed to serve the group\'s goals in teaching English and developing pronunciation and speaking skills.';
+
+  @override
+  String get aboutIpRights =>
+      'All intellectual property and copyright rights are reserved, including the application\'s content, design, educational materials, visual identity, software, and original components, in accordance with applicable laws and regulations.';
+
+  @override
+  String get aboutFounder => 'Founder: Mr. Tharwat Tawfiq';
+
+  @override
+  String get aboutCopyright => '© English Core — All Rights Reserved.';
+
+  @override
   String get privacyTitle => 'Privacy Policy';
 
   @override

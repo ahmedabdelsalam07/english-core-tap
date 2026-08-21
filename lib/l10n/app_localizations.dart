@@ -944,6 +944,30 @@ abstract class AppLocalizations {
   /// **'An app that helps you learn correct American English pronunciation with Arabic translation and Arabic phonetic transcription.'**
   String get aboutDescription;
 
+  /// No description provided for @aboutProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'This application is one of English Core\'s products, developed to serve the group\'s goals in teaching English and developing pronunciation and speaking skills.'**
+  String get aboutProducts;
+
+  /// No description provided for @aboutIpRights.
+  ///
+  /// In en, this message translates to:
+  /// **'All intellectual property and copyright rights are reserved, including the application\'s content, design, educational materials, visual identity, software, and original components, in accordance with applicable laws and regulations.'**
+  String get aboutIpRights;
+
+  /// No description provided for @aboutFounder.
+  ///
+  /// In en, this message translates to:
+  /// **'Founder: Mr. Tharwat Tawfiq'**
+  String get aboutFounder;
+
+  /// No description provided for @aboutCopyright.
+  ///
+  /// In en, this message translates to:
+  /// **'© English Core — All Rights Reserved.'**
+  String get aboutCopyright;
+
   /// No description provided for @privacyTitle.
   ///
   /// In en, this message translates to:

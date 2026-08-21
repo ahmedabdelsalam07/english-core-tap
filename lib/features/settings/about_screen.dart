@@ -17,27 +17,9 @@ class AboutScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
         child: Column(
           children: [
-            const SizedBox(height: 8),
-            const AppLogo(width: 150),
+            const SizedBox(height: 48),
+            const AppLogo(width: 150, showText: false),
             const SizedBox(height: 32),
-            Text(
-              l10n.aboutName,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: palette.primary,
-                    letterSpacing: 2,
-                  ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              l10n.aboutSub,
-              style: TextStyle(
-                color: palette.textSoft,
-                fontWeight: FontWeight.w500,
-                letterSpacing: 1.2,
-              ),
-            ),
-            const SizedBox(height: 24),
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -55,10 +37,46 @@ class AboutScreen extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 40),
             Text(
-              'ENGLISH CORE TaP  •  v1.0.0',
-              style: TextStyle(fontSize: 12, color: palette.textSoft),
+              l10n.aboutProducts,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: palette.text,
+                height: 1.8,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              l10n.aboutIpRights,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: palette.textSoft,
+                height: 1.8,
+              ),
+            ),
+            const SizedBox(height: 28),
+            Text(
+              l10n.aboutFounder,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                color: palette.primary,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.aboutCopyright,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: palette.textSoft,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),

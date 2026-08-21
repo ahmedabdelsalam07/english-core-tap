@@ -449,6 +449,20 @@ class AppLocalizationsAr extends AppLocalizations {
       'تطبيق يساعدك على تعلم النطق الصحيح للغة الإنجليزية باللهجة الأمريكية مع الترجمة والكتابة الصوتية بالعربية.';
 
   @override
+  String get aboutProducts =>
+      'هذا التطبيق هو أحد منتجات شركة English Core، وقد تم تطويره لخدمة أهداف المجموعة في مجال تعليم اللغة الإنجليزية وتطوير مهارات النطق والتحدث.';
+
+  @override
+  String get aboutIpRights =>
+      'جميع حقوق الملكية الفكرية وحقوق النشر محفوظة، بما في ذلك محتوى التطبيق، وتصميمه، ومواده التعليمية، وهويته البصرية، والبرمجيات والمكونات الأصلية الخاصة به، وفقًا للقوانين واللوائح المعمول بها.';
+
+  @override
+  String get aboutFounder => 'المؤسس: أ. ثروت توفيق';
+
+  @override
+  String get aboutCopyright => '© English Core — All Rights Reserved.';
+
+  @override
   String get privacyTitle => 'سياسة الخصوصية';
 
   @override

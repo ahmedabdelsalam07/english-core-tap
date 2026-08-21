@@ -8,7 +8,6 @@ import '../../data/services/api_config.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/services_provider.dart';
-import '../../widgets/app_logo.dart' show kLogoAspectRatio;
 import '../../widgets/error_mapper.dart';
 import '../../widgets/language_switcher.dart';
 
@@ -98,9 +97,9 @@ const Row(
                   const SizedBox(height: 12),
                   Center(
                     child: Image.asset(
-                      'assets/logo/logo_transparent.png',
-                      width: 250,
-                      height: 250 / kLogoAspectRatio,
+                      'assets/logo/heart_transparent.png',
+                      width: 190,
+                      height: 190 * 1199 / 1312,
                       fit: BoxFit.contain,
                       errorBuilder: (_, __, ___) => const Icon(
                         Icons.record_voice_over_rounded,
