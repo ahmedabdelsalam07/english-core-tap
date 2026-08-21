@@ -10,6 +10,7 @@ import '../data/services/tts_service.dart';
 
 final ttsServiceProvider = Provider<TtsService>((ref) {
   final service = TtsService();
+  service.init();
   ref.onDispose(service.dispose);
   return service;
 });

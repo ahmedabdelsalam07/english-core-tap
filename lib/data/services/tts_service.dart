@@ -56,11 +56,11 @@ class TtsService {
 
   // Known Android (Google TTS) voice name fragments.
   static const List<String> _androidMaleHints = [
-    '-iom', 'iol', 'iob', 'tpd', 'tpc', 'tpb', 'g-d', 'rda',
-    'male', // substring of "female" too — order matters, see detection below
+    '-iom', 'iob', 'tpd', 'tpc', 'tpb', 'g-d', 'rda',
   ];
   static const List<String> _androidFemaleHints = [
-    'sfg', 'sfd', 'sfc', 'sfx', 'sfb', 'tpf', 'rmc', 'g-f',
+    'iol', 'iac', 'iuf', 'sfg', 'sfd', 'sfc', 'sfx', 'sfb', 'tpf', 'rmc',
+    'g-f',
   ];
   static const List<String> _iosMaleHints = [
     'fred', 'aaron', 'daniel', 'alex', 'nathan', 'gordon', 'thomas',
@@ -95,9 +95,20 @@ class TtsService {
     try {
       await _tts.setLanguage('en-US');
       await _tts.setPitch(1.0);
+    } catch (_) {}
+    await refreshVoices();
+  }
+
+  /// (Re)queries the engine for available voices. Safe to call multiple
+  /// times — Android engines are often still warming up when first asked.
+  Future<void> refreshVoices() async {
+    try {
       final voices = await _tts.getVoices;
-      if (voices != null) {
-        _available = _parseAvailableVoices(voices);
+      if (voices != null && voices.isNotEmpty) {
+        final parsed = _parseAvailableVoices(voices);
+        if (parsed.isNotEmpty) {
+          _available = parsed;
+        }
       }
     } catch (_) {
       // voices may be unavailable on some emulators; TTS still works
@@ -235,6 +246,11 @@ class TtsService {
       return;
     }
 
+    // The engine list can arrive late on cold start — retry once.
+    if (_available.isEmpty) {
+      await refreshVoices();
+    }
+
     final match = _pickVoice(_currentGender);
     var applied = false;
     if (match != null) {
@@ -243,9 +259,9 @@ class TtsService {
           await _tts.setLanguage('en-US');
         } catch (_) {}
         if (Platform.isAndroid) {
-          await _tts.setVoice({'name': match.name, 'locale': 'en-US'});
+          await _tts.setVoice({'name': match.name, 'locale': match.locale});
         } else {
-          await _tts.setVoice({'name': match.name, 'language': 'en-US'});
+          await _tts.setVoice({'name': match.name, 'language': match.locale});
         }
         applied = true;
         activeVoiceName.value = match.name;
@@ -308,17 +324,13 @@ class TtsService {
     for (final m in _maleMarkers) {
       if (lowerName.contains(m)) return VoiceGender.male;
     }
-    final hints = Platform.isAndroid ? _androidMaleHints : _iosMaleHints;
-    for (final h in hints.skip(Platform.isAndroid ? 1 : 0)) {
+    final mHints = Platform.isAndroid ? _androidMaleHints : _iosMaleHints;
+    for (final h in mHints) {
       if (lowerName.contains(h)) return VoiceGender.male;
     }
     final fHints = Platform.isAndroid ? _androidFemaleHints : _iosFemaleHints;
     for (final h in fHints) {
       if (lowerName.contains(h)) return VoiceGender.female;
-    }
-    if (!Platform.isAndroid) {
-      // Android list keeps 'male' last to avoid matching "female".
-      if (lowerName.contains('male')) return VoiceGender.male;
     }
     return VoiceGender.auto;
   }
@@ -331,16 +343,24 @@ class TtsService {
       final name = (map['name'] ?? '').toString();
       final locale = ((map['locale'] ?? map['language']) ?? '')
           .toString()
-          .toLowerCase();
-      if (name.isEmpty || !locale.startsWith('en-us')) continue;
+          .toLowerCase()
+          .replaceAll('_', '-');
+      if (name.isEmpty || !locale.startsWith('en')) continue;
       out.add(
         AvailableVoice(
           name: name,
-          locale: 'en-US',
+          locale: locale.startsWith('en-us') ? 'en-US' : 'en',
           gender: _detectGender(name.toLowerCase()),
         ),
       );
     }
+    // Prefer en-US voices first, then any other English variant.
+    out.sort((a, b) {
+      final aUs = a.locale == 'en-US' ? 0 : 1;
+      final bUs = b.locale == 'en-US' ? 0 : 1;
+      if (aUs != bUs) return aUs - bUs;
+      return a.name.compareTo(b.name);
+    });
     return out;
   }
 
