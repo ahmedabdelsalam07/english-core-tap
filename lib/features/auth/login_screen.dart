@@ -8,6 +8,7 @@ import '../../data/services/api_config.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/services_provider.dart';
+import '../../widgets/app_logo.dart' show kLogoAspectRatio;
 import '../../widgets/error_mapper.dart';
 import '../../widgets/language_switcher.dart';
 
@@ -76,63 +77,58 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final configured = ref.watch(authConfiguredProvider);
 
     return Scaffold(
-      body: Stack(
-        children: [
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: 300,
-              decoration: const BoxDecoration(
-                gradient: AppColors.brandGradient,
-                borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
-              ),
-            ),
-          ),
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-const Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      LanguageSwitcher(iconColor: Colors.white),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Center(
-                    child: Image.asset(
-                      'assets/logo/heart_transparent.png',
-                      width: 190,
-                      height: 190 * 1199 / 1312,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => const Icon(
-                        Icons.record_voice_over_rounded,
-                        size: 96,
-                        color: Colors.white,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+                decoration: const BoxDecoration(
+                  gradient: AppColors.brandGradient,
+                  borderRadius:
+                      BorderRadius.vertical(bottom: Radius.circular(40)),
+                ),
+                child: Column(
+                  children: [
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        LanguageSwitcher(iconColor: Colors.white),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Center(
+                      child: Image.asset(
+                        'assets/logo/logo_transparent.png',
+                        width: 240,
+                        height: 240 / kLogoAspectRatio,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.record_voice_over_rounded,
+                          size: 96,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    l10n.loginTitle,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    l10n.loginSubtitle,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppPalette.of(context).textSoft,
-                        ),
-                  ),
-                  const SizedBox(height: 28),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      l10n.loginSubtitle,
+                      textAlign: TextAlign.center,
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                    ),
+                    const SizedBox(height: 28),
                   TextField(
                     controller: _email,
                     keyboardType: TextInputType.emailAddress,
@@ -244,9 +240,10 @@ const Row(
                   ),
                 ],
               ),
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
