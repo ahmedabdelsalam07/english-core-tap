@@ -60,9 +60,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 itemCount: 3,
                 onPageChanged: (i) => setState(() => _page = i),
                 itemBuilder: (context, index) {
-                  // Slide 1 is a complete top-to-bottom design — rendered
-                  // full-bleed with no extra text on top of it.
-                  if (index == 0) return const _FullDesignSlide();
                   return LayoutBuilder(
                     builder: (context, constraints) {
                       return SingleChildScrollView(
@@ -139,6 +136,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Widget _buildSlide(int index, AppLocalizations l10n, AppPalette palette) {
     switch (index) {
+      case 0:
+        return _SlideScaffold(
+          visual: const _GirlImage(),
+          title: l10n.onboardingTitle1,
+          subtitle: l10n.onboardingSub1,
+          palette: palette,
+        );
       case 1:
         return _SlideScaffold(
           visual: const _SafeHeart(),
@@ -152,33 +156,35 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 }
 
-/// Slide 1 — the complete ready-made design (girl artwork with its own
-/// baked-in text), shown edge-to-edge on its native black background.
-class _FullDesignSlide extends StatelessWidget {
-  const _FullDesignSlide();
+/// Slide 1 — the cartoon girl artwork with the welcome text under it.
+class _GirlImage extends StatelessWidget {
+  const _GirlImage();
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Container(
-          width: double.infinity,
-          height: constraints.maxHeight,
-          color: Colors.black,
-          child: Center(
-            child: Image.asset(
-              'assets/images/onboarding_girl.jpeg',
-              fit: BoxFit.contain,
-              height: constraints.maxHeight,
-              errorBuilder: (_, __, ___) => Icon(
-                Icons.face_retouching_natural_rounded,
-                size: 120,
-                color: AppPalette.of(context).primary,
-              ),
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: AppRadius.xl,
+        border: Border.all(color: AppPalette.of(context).divider),
+      ),
+      child: ClipRRect(
+        borderRadius: AppRadius.lg,
+        child: Image.asset(
+          'assets/images/onboarding_girl.jpeg',
+          height: 300,
+          fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) => SizedBox(
+            height: 300,
+            child: Icon(
+              Icons.face_retouching_natural_rounded,
+              size: 120,
+              color: AppPalette.of(context).primary,
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
@@ -256,27 +262,7 @@ class _BrandSlide extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         const FullLogo(width: 330),
-        const SizedBox(height: 22),
-        Text(
-          l10n.onboardingBrandAr,
-          textAlign: TextAlign.center,
-          textDirection: TextDirection.rtl,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: palette.text,
-              ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          l10n.onboardingOwnerAr,
-          textAlign: TextAlign.center,
-          textDirection: TextDirection.rtl,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: palette.secondary,
-              ),
-        ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 26),
         Text(
           l10n.onboardingBrandEn,
           textAlign: TextAlign.center,
@@ -286,7 +272,7 @@ class _BrandSlide extends StatelessWidget {
                 color: palette.text,
               ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         Text(
           l10n.onboardingOwnerEn,
           textAlign: TextAlign.center,
@@ -294,23 +280,6 @@ class _BrandSlide extends StatelessWidget {
                 fontWeight: FontWeight.w700,
                 color: palette.secondary,
               ),
-        ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-          decoration: BoxDecoration(
-            color: palette.surfaceAlt,
-            borderRadius: AppRadius.pill,
-          ),
-          child: Text(
-            l10n.onboardingTagline,
-            textAlign: TextAlign.center,
-            textDirection: TextDirection.rtl,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: palette.primary,
-                ),
-          ),
         ),
       ],
     );
