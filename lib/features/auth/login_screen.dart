@@ -8,6 +8,7 @@ import '../../data/services/api_config.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/services_provider.dart';
+import '../../widgets/app_logo.dart' show kLogoAspectRatio;
 import '../../widgets/error_mapper.dart';
 import '../../widgets/language_switcher.dart';
 
@@ -75,7 +76,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             left: 0,
             right: 0,
             child: Container(
-              height: 260,
+              height: 300,
               decoration: const BoxDecoration(
                 gradient: AppColors.brandGradient,
                 borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
@@ -96,28 +97,19 @@ const Row(
                   ),
                   const SizedBox(height: 12),
                   Center(
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
+                    child: Image.asset(
+                      'assets/logo/logo_transparent.png',
+                      width: 250,
+                      height: 250 / kLogoAspectRatio,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Icon(
+                        Icons.record_voice_over_rounded,
+                        size: 96,
                         color: Colors.white,
-                        borderRadius: AppRadius.lg,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.12),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Image.asset(
-                        'assets/logo/english_core_tap.png',
-                        width: 96,
-                        height: 96 * 600 / 1000,
-                        fit: BoxFit.contain,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 24),
                   Text(
                     l10n.loginTitle,
                     textAlign: TextAlign.center,
