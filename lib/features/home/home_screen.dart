@@ -147,16 +147,14 @@ static const List<String> _examples = [
 
   Future<void> _speechToText() async {
     final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
     final speech = ref.read(speechServiceProvider);
-    if (!speech.isAvailable.value) {
-      ScaffoldMessenger.of(context).showSnackBar(
+    // requestPermission also lazily (re)initializes the engine.
+    final permitted = await speech.requestPermission();
+    if (!permitted || !speech.isAvailable.value) {
+      messenger.showSnackBar(
         SnackBar(content: Text(l10n.speechNotAvailable)),
       );
-      return;
-    }
-    final permitted = await speech.requestPermission();
-    if (!permitted) {
-      _showMicPermissionDialog(l10n);
       return;
     }
     final result = await speech.listen();
@@ -166,28 +164,10 @@ static const List<String> _examples = [
       await _process(result);
     } else {
       await speech.stop();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.speechNoResult)),
-        );
-      }
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.speechNoResult)),
+      );
     }
-  }
-
-  void _showMicPermissionDialog(AppLocalizations l10n) {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.micPermissionTitle),
-        content: Text(l10n.micPermissionMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(l10n.micPermissionCancel),
-          ),
-        ],
-      ),
-    );
   }
 
   void _clear() {

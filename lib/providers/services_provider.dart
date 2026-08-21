@@ -24,6 +24,7 @@ final audioPlayerServiceProvider = Provider<AudioPlayerService>((ref) {
 
 final speechServiceProvider = Provider<SpeechService>((ref) {
   final service = SpeechService();
+  service.init();
   ref.onDispose(service.dispose);
   return service;
 });
