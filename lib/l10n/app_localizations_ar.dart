@@ -80,7 +80,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get loginSubtitle => 'سجّل الدخول إلى حسابك الخاص للمتابعة';
 
   @override
-  String get loginUsername => 'اسم المستخدم';
+  String get loginUsername => 'البريد الإلكتروني';
 
   @override
   String get loginPassword => 'كلمة المرور';
@@ -92,7 +92,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get loginLoading => 'جارٍ تسجيل الدخول...';
 
   @override
-  String get loginErrorInvalid => 'اسم المستخدم أو كلمة المرور غير صحيحة.';
+  String get loginErrorInvalid => 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
 
   @override
   String get loginErrorNetwork =>
@@ -103,7 +103,10 @@ class AppLocalizationsAr extends AppLocalizations {
       'الخادم الآمن غير مُهيأ. يرجى إعداد خادم API قبل استخدام التطبيق.';
 
   @override
-  String get loginFieldRequired => 'يرجى إدخال اسم المستخدم وكلمة المرور.';
+  String get loginFieldRequired => 'يرجى إدخال البريد الإلكتروني وكلمة المرور.';
+
+  @override
+  String get loginEmailInvalid => 'من فضلك أدخل بريدًا إلكترونيًا صحيحًا.';
 
   @override
   String get loginSecureNote =>

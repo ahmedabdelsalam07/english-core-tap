@@ -27,14 +27,15 @@
 
   "loginTitle": "Welcome",
   "loginSubtitle": "Sign in to your private account to continue",
-  "loginUsername": "Username",
+  "loginUsername": "Email",
   "loginPassword": "Password",
   "loginButton": "Sign In",
   "loginLoading": "Signing in...",
-  "loginErrorInvalid": "Username or password is incorrect.",
+  "loginErrorInvalid": "Email or password is incorrect.",
   "loginErrorNetwork": "Could not connect to the server. Check your internet connection and try again.",
   "loginErrorBackend": "The secure backend is not configured. Please configure the API server before using the app.",
-  "loginFieldRequired": "Please enter username and password.",
+  "loginFieldRequired": "Please enter your email and password.",
+  "loginEmailInvalid": "Please enter a valid email address.",
   "loginSecureNote": "Secure private access. Only authorized accounts can sign in.",
 
   "homeTitle": "Pronounce English",

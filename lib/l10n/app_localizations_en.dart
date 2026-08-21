@@ -81,7 +81,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginSubtitle => 'Sign in to your private account to continue';
 
   @override
-  String get loginUsername => 'Username';
+  String get loginUsername => 'Email';
 
   @override
   String get loginPassword => 'Password';
@@ -93,7 +93,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginLoading => 'Signing in...';
 
   @override
-  String get loginErrorInvalid => 'Username or password is incorrect.';
+  String get loginErrorInvalid => 'Email or password is incorrect.';
 
   @override
   String get loginErrorNetwork =>
@@ -104,7 +104,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'The secure backend is not configured. Please configure the API server before using the app.';
 
   @override
-  String get loginFieldRequired => 'Please enter username and password.';
+  String get loginFieldRequired => 'Please enter your email and password.';
+
+  @override
+  String get loginEmailInvalid => 'Please enter a valid email address.';
 
   @override
   String get loginSecureNote =>

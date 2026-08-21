@@ -239,7 +239,7 @@ abstract class AppLocalizations {
   /// No description provided for @loginUsername.
   ///
   /// In en, this message translates to:
-  /// **'Username'**
+  /// **'Email'**
   String get loginUsername;
 
   /// No description provided for @loginPassword.
@@ -263,7 +263,7 @@ abstract class AppLocalizations {
   /// No description provided for @loginErrorInvalid.
   ///
   /// In en, this message translates to:
-  /// **'Username or password is incorrect.'**
+  /// **'Email or password is incorrect.'**
   String get loginErrorInvalid;
 
   /// No description provided for @loginErrorNetwork.
@@ -281,8 +281,14 @@ abstract class AppLocalizations {
   /// No description provided for @loginFieldRequired.
   ///
   /// In en, this message translates to:
-  /// **'Please enter username and password.'**
+  /// **'Please enter your email and password.'**
   String get loginFieldRequired;
+
+  /// No description provided for @loginEmailInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid email address.'**
+  String get loginEmailInvalid;
 
   /// No description provided for @loginSecureNote.
   ///

@@ -19,32 +19,40 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _username = TextEditingController();
+  static final RegExp _emailRegex = RegExp(
+    r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
+  );
+
+  final _email = TextEditingController();
   final _password = TextEditingController();
   bool _obscure = true;
   String? _error;
 
   @override
   void dispose() {
-    _username.dispose();
+    _email.dispose();
     _password.dispose();
     super.dispose();
   }
 
   Future<void> _login() async {
     final l10n = AppLocalizations.of(context);
-    final username = _username.text.trim();
+    final email = _email.text.trim();
     final password = _password.text;
 
-    if (username.isEmpty || password.isEmpty) {
+    if (email.isEmpty || password.isEmpty) {
       setState(() => _error = l10n.loginFieldRequired);
+      return;
+    }
+    if (!_emailRegex.hasMatch(email)) {
+      setState(() => _error = l10n.loginEmailInvalid);
       return;
     }
 
     FocusScope.of(context).unfocus();
     setState(() => _error = null);
     final controller = ref.read(authControllerProvider.notifier);
-    await controller.login(username, password);
+    await controller.login(email, password);
 
     if (!mounted) return;
     final state = ref.read(authControllerProvider);
@@ -126,12 +134,13 @@ const Row(
                   ),
                   const SizedBox(height: 28),
                   TextField(
-                    controller: _username,
+                    controller: _email,
+                    keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
-                    autofillHints: const [AutofillHints.username],
+                    autofillHints: const [AutofillHints.email],
                     decoration: InputDecoration(
                       labelText: l10n.loginUsername,
-                      prefixIcon: const Icon(Icons.person_outline_rounded),
+                      prefixIcon: const Icon(Icons.alternate_email_rounded),
                     ),
                   ),
                   const SizedBox(height: 14),

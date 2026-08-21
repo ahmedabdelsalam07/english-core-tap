@@ -8,8 +8,8 @@ import '../../core/constants.dart';
 import 'api_config.dart';
 import 'storage_keys.dart';
 
-/// Accounts sign in with a short username; the app maps it to an email on
-/// the project auth domain. The admin (teacher) creates these accounts.
+/// Accounts sign in with the email + password pair created for them in the
+/// Firebase console by the admin (teacher). No local email mapping is done.
 const String authEmailDomain = 'englishcore.app';
 
 /// Authenticated account (never stores the password).
@@ -68,7 +68,9 @@ class FirebaseAuthService implements AuthService {
 
   @override
   Future<UserAccount> login(String username, String password) async {
-    final email = toAuthEmail(username.trim());
+    // Accounts are Firebase Auth email+password users; the login field is the
+    // plain email address exactly as created in the Firebase console.
+    final email = username.trim();
     if (email.isEmpty || password.isEmpty) {
       throw const AppException(AppErrorKind.emptyInput);
     }
@@ -99,15 +101,7 @@ class FirebaseAuthService implements AuthService {
   }
 }
 
-/// Converts a short username (e.g. `student1`) to an auth email
-/// (`student1@englishcore.app`). Full emails pass through unchanged.
-String toAuthEmail(String input) {
-  final value = input.trim();
-  if (value.isEmpty) return '';
-  if (value.contains('@')) return value;
-  return '$value@$authEmailDomain';
-}
-
+/// Display name derived from the account email (the part before '@').
 String usernameFrom(User user) {
   final email = user.email;
   if (email == null || email.isEmpty) return user.uid;
