@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -48,14 +49,24 @@ static const List<String> _examples = [
     _autoCheckForUpdate();
   }
 
+  /// Tags already offered this session. Guards against an endless
+  /// prompt-reload-prompt loop if the running build's version constant ever
+  /// drifts from the latest release tag.
+  static final Set<String> _promptedUpdateTags = <String>{};
+
   /// Silent update check once per app launch: if a newer GitHub release
   /// exists, offer it immediately — users never have to hunt for updates.
   Future<void> _autoCheckForUpdate() async {
     await Future<void>.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
+    if (!mounted || kDebugMode) return;
     try {
       final info = await ref.read(updateCheckerProvider).checkForUpdate();
-      if (!mounted || !info.updateAvailable) return;
+      if (!mounted ||
+          !info.updateAvailable ||
+          _promptedUpdateTags.contains(info.latestTag)) {
+        return;
+      }
+      _promptedUpdateTags.add(info.latestTag);
       final l10n = AppLocalizations.of(context);
       await showDialog<void>(
         context: context,
