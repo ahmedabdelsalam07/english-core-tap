@@ -1,7 +1,7 @@
 name: english_core_tap
 description: English Core TaP - تطبيق تعلم النطق الأمريكي مع الترجمة والكتابة الصوتية بالعربية. English Core - MR. THARWAT TAWFIQ.
 publish_to: 'none'
-version: 1.0.26+26
+version: 1.0.27+27
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -24,6 +24,7 @@ dependencies:
   go_router: ^14.8.1
   firebase_core: ^4.13.0
   firebase_auth: ^6.5.7
+  web: ^1.1.1
 
 dev_dependencies:
   flutter_test:

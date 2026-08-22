@@ -350,6 +350,12 @@ abstract class AppLocalizations {
   /// **'Listening... tap to stop'**
   String get inputMicListening;
 
+  /// No description provided for @inputMicRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording in progress... speak now'**
+  String get inputMicRecording;
+
   /// No description provided for @inputEmptyError.
   ///
   /// In en, this message translates to:

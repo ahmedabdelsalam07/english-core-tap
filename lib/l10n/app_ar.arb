@@ -1,4 +1,4 @@
-{
+﻿{
   "@@locale": "ar",
   "appName": "English Core TaP",
   "appBrand": "ENGLISH CORE",
@@ -47,6 +47,7 @@
   "inputClear": "مسح",
   "inputMic": "تحدث",
   "inputMicListening": "جارٍ الاستماع... اضغط للإيقاف",
+  "inputMicRecording": "جاري التسجيل... اتكلم الآن",
   "inputEmptyError": "يرجى كتابة أو لصق كلمة أو جملة إنجليزية أولًا.",
   "inputOnlyArabicError": "يرجى إدخال نص إنجليزي للحصول على النطق والترجمة.",
   "mainCta": "نطق وترجمة",

@@ -1,4 +1,4 @@
-{
+﻿{
   "@@locale": "en",
   "appName": "English Core TaP",
   "appBrand": "ENGLISH CORE",
@@ -47,6 +47,7 @@
   "inputClear": "Clear",
   "inputMic": "Speak",
   "inputMicListening": "Listening... tap to stop",
+  "inputMicRecording": "Recording in progress... speak now",
   "inputEmptyError": "Please type or paste an English word or sentence first.",
   "inputOnlyArabicError": "Please enter English text to get pronunciation and translation.",
   "mainCta": "Pronounce & Translate",

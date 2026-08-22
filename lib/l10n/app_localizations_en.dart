@@ -142,6 +142,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inputMicListening => 'Listening... tap to stop';
 
   @override
+  String get inputMicRecording => 'Recording in progress... speak now';
+
+  @override
   String get inputEmptyError =>
       'Please type or paste an English word or sentence first.';
 

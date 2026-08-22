@@ -141,6 +141,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get inputMicListening => 'جارٍ الاستماع... اضغط للإيقاف';
 
   @override
+  String get inputMicRecording => 'جاري التسجيل... اتكلم الآن';
+
+  @override
   String get inputEmptyError =>
       'يرجى كتابة أو لصق كلمة أو جملة إنجليزية أولًا.';
 

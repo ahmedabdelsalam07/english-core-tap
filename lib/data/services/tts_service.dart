@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -47,7 +46,8 @@ class TtsService {
   VoiceGender _currentGender = VoiceGender.auto;
   String _lastAppliedVoiceName = '';
   double _activePitch = 1.0;
-  bool get _isPauseSupported => Platform.isIOS;
+  bool get _isPauseSupported =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
   Timer? _progressTimer;
   final int _estimatedMsPerChar = 90;
   final int _tickMs = 250;

@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/enums.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
+import '../../data/services/speech_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/home_provider.dart';
@@ -26,8 +27,34 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _controller = TextEditingController();
+  late final AnimationController _micPulseCtrl;
+  SpeechLang _speechLang = SpeechLang.english;
+
+  @override
+  void initState() {
+    super.initState();
+    _micPulseCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    // Breathe only while the microphone is actually recording.
+    ref.read(speechServiceProvider).isListening.addListener(_onListeningChanged);
+    _listenForResult();
+    _autoCheckForUpdate();
+  }
+
+  void _onListeningChanged() {
+    final listening = ref.read(speechServiceProvider).isListening.value;
+    if (listening) {
+      _micPulseCtrl.repeat(reverse: true);
+    } else if (_micPulseCtrl.isAnimating) {
+      _micPulseCtrl.stop();
+      _micPulseCtrl.value = 0;
+    }
+  }
 
 static const List<String> _examples = [
     'hello',
@@ -41,13 +68,6 @@ static const List<String> _examples = [
   ];
 
   static final RegExp _arabicRegex = RegExp(r'[\u0600-\u06FF]');
-
-  @override
-  void initState() {
-    super.initState();
-    _listenForResult();
-    _autoCheckForUpdate();
-  }
 
   /// Tags already offered this session. Guards against an endless
   /// prompt-reload-prompt loop if the running build's version constant ever
@@ -114,7 +134,10 @@ static const List<String> _examples = [
   }
 
   @override
+  @override
   void dispose() {
+    ref.read(speechServiceProvider).isListening.removeListener(_onListeningChanged);
+    _micPulseCtrl.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -146,9 +169,15 @@ static const List<String> _examples = [
   }
 
   Future<void> _speechToText() async {
+    final speech = ref.read(speechServiceProvider);
+    // Tapping while already recording stops the session instead of
+    // starting a second overlapping one.
+    if (speech.isListening.value) {
+      await speech.stop();
+      return;
+    }
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    final speech = ref.read(speechServiceProvider);
     // requestPermission also lazily (re)initializes the engine.
     final permitted = await speech.requestPermission();
     if (!permitted || !speech.isAvailable.value) {
@@ -157,7 +186,7 @@ static const List<String> _examples = [
       );
       return;
     }
-    final result = await speech.listen();
+    final result = await speech.listen(lang: _speechLang);
     if (result != null && result.isNotEmpty) {
       _controller.text = result;
       await speech.stop();
@@ -226,6 +255,42 @@ static const List<String> _examples = [
                   const SizedBox(height: 18),
                   _RecentHistory(onTap: _process),
                 ],
+              ),
+            ),
+          ),
+          Positioned(
+            top: 0,
+            left: 16,
+            right: 16,
+            child: SafeArea(
+              bottom: false,
+              child: ValueListenableBuilder<bool>(
+                valueListenable: ref.read(speechServiceProvider).isListening,
+                builder: (context, listening, _) => AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 250),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  transitionBuilder: (child, anim) => FadeTransition(
+                    opacity: anim,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0, -1),
+                        end: Offset.zero,
+                      ).animate(anim),
+                      child: child,
+                    ),
+                  ),
+                  child: listening
+                      ? _RecordingBanner(
+                          key: const ValueKey('recording-banner'),
+                          pulseCtrl: _micPulseCtrl,
+                          speechLevel:
+                              ref.read(speechServiceProvider).soundLevel,
+                          label: l10n.inputMicRecording,
+                          onTap: _speechToText,
+                        )
+                      : const SizedBox.shrink(key: ValueKey('no-banner')),
+                ),
               ),
             ),
           ),
@@ -381,10 +446,23 @@ ValueListenableBuilder<TextEditingValue>(
                 onTap: _paste,
               ),
               const SizedBox(width: 8),
-              _ToolButton(
-                icon: Icons.mic_none_rounded,
-                label: l10n.inputMic,
-                onTap: _speechToText,
+              _SpeechLangToggle(
+                value: _speechLang,
+                arabicLabel: l10n.settingsArabic,
+                englishLabel: l10n.settingsEnglish,
+                onChanged: (lang) => setState(() => _speechLang = lang),
+              ),
+              const SizedBox(width: 8),
+              ValueListenableBuilder<bool>(
+                valueListenable: ref.read(speechServiceProvider).isListening,
+                builder: (context, listening, _) => _ToolButton(
+                  icon: listening
+                      ? Icons.mic_rounded
+                      : Icons.mic_none_rounded,
+                  label: l10n.inputMic,
+                  onTap: _speechToText,
+                  active: listening,
+                ),
               ),
               const Spacer(),
               ValueListenableBuilder<TextEditingValue>(
@@ -612,17 +690,23 @@ class _ToolButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final bool active;
   const _ToolButton({
     required this.icon,
     required this.label,
     required this.onTap,
+    this.active = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final palette = AppPalette.of(context);
+    // Recording state uses the brand red so "mic is live" is unmistakable.
+    final Color bg =
+        active ? AppColors.danger.withOpacity(0.14) : palette.surfaceAlt;
+    final Color fg = active ? AppColors.danger : palette.primary;
     return Material(
-      color: palette.surfaceAlt,
+      color: bg,
       borderRadius: AppRadius.pill,
       child: InkWell(
         borderRadius: AppRadius.pill,
@@ -632,20 +716,229 @@ class _ToolButton extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 18, color: palette.primary),
+              Icon(icon, size: 18, color: fg),
               const SizedBox(width: 4),
               Text(
                 label,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: palette.primary,
+                  color: fg,
                 ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Compact AR/EN segmented control that picks the dictation language for
+/// the next speech session (recognition engines take one locale at a time).
+class _SpeechLangToggle extends StatelessWidget {
+  final SpeechLang value;
+  final String arabicLabel;
+  final String englishLabel;
+  final ValueChanged<SpeechLang> onChanged;
+
+  const _SpeechLangToggle({
+    required this.value,
+    required this.arabicLabel,
+    required this.englishLabel,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
+    Widget seg(SpeechLang lang, String label) {
+      final selected = value == lang;
+      return Expanded(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => onChanged(lang),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            decoration: BoxDecoration(
+              color: selected
+                  ? palette.primary.withOpacity(0.20)
+                  : Colors.transparent,
+              borderRadius: AppRadius.pill,
+            ),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                color:
+                    selected ? palette.primary : palette.textSoft,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      height: 34,
+      width: 108,
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: palette.surfaceAlt,
+        borderRadius: AppRadius.pill,
+        border: Border.all(color: palette.textSoft.withOpacity(0.15)),
+      ),
+      child: Row(
+        children: [
+          seg(SpeechLang.arabic, arabicLabel),
+          seg(SpeechLang.english, englishLabel),
+        ],
+      ),
+    );
+  }
+}
+
+/// Prominent "recording" banner pinned to the top of the screen while the
+/// microphone is capturing: pulsing mic badge, bold label and live
+/// sound-level bars. Tap it (or the mic button) to stop.
+class _RecordingBanner extends StatelessWidget {
+  final AnimationController pulseCtrl;
+  final ValueNotifier<double> speechLevel;
+  final String label;
+  final VoidCallback onTap;
+
+  const _RecordingBanner({
+    super.key,
+    required this.pulseCtrl,
+    required this.speechLevel,
+    required this.label,
+    required this.onTap,
+  });
+
+  static const List<double> _barFactors = [0.5, 0.75, 1.0, 0.75, 0.5];
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: Listenable.merge([pulseCtrl, speechLevel]),
+      builder: (context, _) {
+        final pulse = pulseCtrl.value; // 0..1 breathing wave
+        // Engine level → 0..1 (dB-ish units; ~45 is loud speech).
+        final level = ((speechLevel.value / 45).clamp(0.0, 1.0));
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(18),
+            child: Ink(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: AlignmentDirectional.centerStart,
+                  end: AlignmentDirectional.centerEnd,
+                  colors: [
+                    AppColors.darkSurface,
+                    Color.lerp(AppColors.darkSurface, AppColors.primary, 0.22)!,
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: AppColors.primaryOnDark.withOpacity(0.35),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.35),
+                    blurRadius: 14 + 8 * pulse,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color:
+                              AppColors.primaryOnDark.withOpacity(0.16),
+                        ),
+                        child: const Icon(
+                          Icons.mic_rounded,
+                          color: AppColors.primaryOnDark,
+                          size: 20,
+                        ),
+                      ),
+                      PositionedDirectional(
+                        top: -1,
+                        end: -1,
+                        child: Container(
+                          width: 9 + 3 * pulse + 2 * level,
+                          height: 9 + 3 * pulse + 2 * level,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Color.lerp(
+                              AppColors.danger,
+                              AppColors.danger.withOpacity(0.4),
+                              pulse,
+                            ),
+                            border: Border.all(
+                              color: AppColors.darkSurface,
+                              width: 1.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  for (final f in _barFactors)
+                    Container(
+                      width: 4,
+                      height: 8 +
+                          26 *
+                              ((f * (0.30 + 0.40 * pulse) + f * level)
+                                  .clamp(0.0, 1.0)),
+                      margin: const EdgeInsets.symmetric(horizontal: 2),
+                      decoration: BoxDecoration(
+                        color: Color.lerp(
+                          AppColors.primaryOnDark.withOpacity(0.55),
+                          Colors.white,
+                          level,
+                        ),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
