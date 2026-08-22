@@ -499,6 +499,8 @@ class _AudioPlayerWidgetState extends ConsumerState<AudioPlayerWidget>
           speed: _speed,
           dotCtrl: _dotCtrl,
           onPlayPause: () async {
+            final messenger = ScaffoldMessenger.of(context);
+            final errorText = AppLocalizations.of(context).ttsError;
             try {
               if (speaking) {
                 await tts.pause();
@@ -513,11 +515,9 @@ class _AudioPlayerWidgetState extends ConsumerState<AudioPlayerWidget>
               }
             } catch (_) {
               if (mounted) {
-                ScaffoldMessenger.of(context)
+                messenger
                   ..hideCurrentSnackBar()
-                  ..showSnackBar(
-                    SnackBar(content: Text(AppLocalizations.of(context).ttsError)),
-                  );
+                  ..showSnackBar(SnackBar(content: Text(errorText)));
               }
             }
           },
@@ -565,7 +565,7 @@ class _VoiceBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFF2D2D2D),
+        color: AppColors.darkSurface,
         borderRadius: BorderRadius.circular(24),
       ),
       child: Row(
@@ -573,7 +573,7 @@ class _VoiceBar extends StatelessWidget {
           GestureDetector(
             onTap: onStop,
             child: const Icon(Icons.delete_outline_rounded,
-                color: Color(0xFFEF5350), size: 22),
+                color: AppColors.danger, size: 22),
           ),
           const SizedBox(width: 4),
           AnimatedBuilder(
@@ -585,8 +585,8 @@ class _VoiceBar extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: Color.lerp(
-                    const Color(0xFFEF5350),
-                    const Color(0xFFEF5350).withOpacity(0.3),
+                    AppColors.danger,
+                    AppColors.danger.withOpacity(0.3),
                     speaking ? dotCtrl.value : 0.0,
                   ),
                 ),
@@ -613,8 +613,8 @@ class _VoiceBar extends StatelessWidget {
             child: Icon(
               Icons.pause_rounded,
               color: (speaking && !paused)
-                  ? const Color(0xFFEF5350)
-                  : const Color(0xFF888888),
+                  ? AppColors.danger
+                  : AppColors.darkTextSoft,
               size: 26,
             ),
           ),
@@ -629,13 +629,13 @@ class _VoiceBar extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
               decoration: BoxDecoration(
-                color: const Color(0xFF3A3A3A),
+                color: AppColors.darkSurfaceAlt,
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
                 '${speed}x',
                 style: const TextStyle(
-                  color: Colors.white70,
+                  color: AppColors.darkTextSoft,
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                 ),
@@ -649,7 +649,7 @@ class _VoiceBar extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: const BoxDecoration(
-                color: Color(0xFF25D366),
+                color: AppColors.success,
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -742,8 +742,8 @@ class _CompactWaveformState extends State<_CompactWaveform>
                 margin: const EdgeInsets.symmetric(horizontal: 1.2),
                 decoration: BoxDecoration(
                   color: passed
-                      ? Colors.white
-                      : Colors.white.withOpacity(0.35),
+                      ? AppColors.primaryOnDark
+                      : Colors.white.withOpacity(0.30),
                   borderRadius: BorderRadius.circular(3),
                 ),
               );
