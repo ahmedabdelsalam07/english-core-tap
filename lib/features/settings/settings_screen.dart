@@ -109,9 +109,8 @@ class SettingsScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    IconButton.filledTonal(
-                      tooltip: l10n.resultPlay,
-                      onPressed: () async {
+                    GestureDetector(
+                      onTap: () async {
                         final messenger =
                             ScaffoldMessenger.of(context);
                         try {
@@ -130,8 +129,16 @@ class SettingsScreen extends ConsumerWidget {
                             );
                         }
                       },
-                      icon: Icon(Icons.play_arrow_rounded,
-                          size: 22, color: palette.primary),
+                      child: Container(
+                        width: 38,
+                        height: 38,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.success,
+                        ),
+                        child: const Icon(Icons.play_arrow_rounded,
+                            size: 24, color: Colors.white),
+                      ),
                     ),
                   ],
                 ),

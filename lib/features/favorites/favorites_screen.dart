@@ -120,14 +120,18 @@ class _FavoriteCard extends ConsumerWidget {
                     ),
                   ),
                   const Spacer(),
-                  ValueListenableBuilder<bool>(
-                    valueListenable: tts.isSpeaking,
-                    builder: (_, isSpeakingValue, __) {
-                      return IconButton.filledTonal(
-                        tooltip: l10n.resultPlay,
-                        onPressed: () async {
-                          if (isSpeakingValue) {
-                            await tts.stop();
+                  AnimatedBuilder(
+                    animation: Listenable.merge([tts.isSpeaking, tts.isPaused]),
+                    builder: (_, __) {
+                      final speaking = tts.isSpeaking.value;
+                      final paused = tts.isPaused.value;
+                      final active = speaking && !paused;
+                      return GestureDetector(
+                        onTap: () async {
+                          if (active) {
+                            await tts.pause();
+                          } else if (paused) {
+                            await tts.resume();
                           } else {
                             await tts.speak(
                               result.englishText,
@@ -138,12 +142,21 @@ class _FavoriteCard extends ConsumerWidget {
                             );
                           }
                         },
-                        icon: Icon(
-                          isSpeakingValue
-                              ? Icons.stop_rounded
-                              : Icons.play_arrow_rounded,
-                          size: 20,
-                          color: palette.primary,
+                        child: Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color:
+                                active ? AppColors.danger : AppColors.success,
+                          ),
+                          child: Icon(
+                            active
+                                ? Icons.pause_rounded
+                                : Icons.play_arrow_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                       );
                     },

@@ -230,14 +230,41 @@ class _HistoryTile extends ConsumerWidget {
                   ],
                 ),
               ),
-              IconButton(
-                tooltip: l10n.resultPlay,
-                onPressed: () => tts.speak(
-                  entry.englishText,
-                  gender: ref.read(settingsControllerProvider).defaultVoice,
-                ),
-                icon: Icon(Icons.play_circle_outline_rounded,
-                    color: palette.primary, size: 22),
+              AnimatedBuilder(
+                animation: Listenable.merge([tts.isSpeaking, tts.isPaused]),
+                builder: (_, __) {
+                  final speaking = tts.isSpeaking.value;
+                  final paused = tts.isPaused.value;
+                  final active = speaking && !paused;
+                  return GestureDetector(
+                    onTap: () async {
+                      if (active) {
+                        await tts.pause();
+                      } else if (paused) {
+                        await tts.resume();
+                      } else {
+                        await tts.speak(
+                          entry.englishText,
+                          gender:
+                              ref.read(settingsControllerProvider).defaultVoice,
+                        );
+                      }
+                    },
+                    child: Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: active ? AppColors.danger : AppColors.success,
+                      ),
+                      child: Icon(
+                        active ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  );
+                },
               ),
               IconButton(
                 tooltip: l10n.historyDelete,
