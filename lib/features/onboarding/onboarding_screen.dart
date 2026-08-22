@@ -156,34 +156,51 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 }
 
-/// Slide 1 — the cartoon girl artwork with the welcome text under it.
+/// Slide 1 — the cartoon girl emerging from her frame: the bordered box
+/// hugs her lower half while she rises above its top edge, never clipped.
 class _GirlImage extends StatelessWidget {
   const _GirlImage();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: AppRadius.xl,
-        border: Border.all(color: AppPalette.of(context).divider),
-      ),
-      child: ClipRRect(
-        borderRadius: AppRadius.lg,
-        child: Image.asset(
-          'assets/images/onboarding_girl.png',
-          height: 300,
-          fit: BoxFit.contain,
-          errorBuilder: (_, __, ___) => SizedBox(
-            height: 300,
-            child: Icon(
-              Icons.face_retouching_natural_rounded,
-              size: 120,
-              color: AppPalette.of(context).primary,
+    final palette = AppPalette.of(context);
+    return SizedBox(
+      height: 350,
+      child: Stack(
+        alignment: Alignment.bottomCenter,
+        children: [
+          // The frame she stands inside.
+          Positioned(
+            bottom: 0,
+            child: Container(
+              width: 252,
+              height: 232,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: AppRadius.xl,
+                border: Border.all(color: palette.divider),
+              ),
             ),
           ),
-        ),
+          // Full character overflowing above the frame — no clipping.
+          Positioned(
+            bottom: 14,
+            child: Image.asset(
+              'assets/images/onboarding_girl.png',
+              height: 322,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => SizedBox(
+                height: 322,
+                width: 215,
+                child: Icon(
+                  Icons.face_retouching_natural_rounded,
+                  size: 120,
+                  color: palette.primary,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
