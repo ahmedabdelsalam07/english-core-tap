@@ -39,6 +39,12 @@ jobs:
       - name: Build web
         run: flutter build web --release --base-href /english-core-tap/ --pwa-strategy=none
 
+      - name: Build APK (mirror for fast regional download)
+        run: flutter build apk --release
+
+      - name: Copy APK into web bundle
+        run: cp build/app/outputs/flutter-apk/app-release.apk build/web/english-core-tap.apk
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
