@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -429,8 +428,9 @@ class _NativeAudioCard extends ConsumerWidget {
   }
 }
 
-/// Full TTS audio player: play / pause / resume / stop / replay + progress
-/// + waveform + speed.
+
+
+/// WhatsApp-style voice message audio player bar.
 class AudioPlayerWidget extends ConsumerStatefulWidget {
   final String text;
   final VoiceGender voice;
@@ -441,32 +441,40 @@ class AudioPlayerWidget extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<AudioPlayerWidget> createState() => _AudioPlayerWidgetState();
+  ConsumerState<AudioPlayerWidget> createState() =>
+      _AudioPlayerWidgetState();
 }
 
-class _AudioPlayerWidgetState extends ConsumerState<AudioPlayerWidget> {
-  Timer? _timer;
+class _AudioPlayerWidgetState extends ConsumerState<AudioPlayerWidget>
+    with SingleTickerProviderStateMixin {
   double _speed = 1.0;
   bool _speedInitialized = false;
   final int _estimatedMsPerChar = 90;
+  late final AnimationController _dotCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _dotCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    )..repeat(reverse: true);
+  }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _dotCtrl.dispose();
     super.dispose();
   }
 
-  Duration get _estimatedDuration =>
-      Duration(milliseconds: (widget.text.length * _estimatedMsPerChar).clamp(800, 30000));
+  Duration get _estimatedDuration => Duration(
+      milliseconds: (widget.text.length * _estimatedMsPerChar).clamp(800, 30000));
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final palette = AppPalette.of(context);
     final tts = ref.watch(ttsServiceProvider);
     final settings = ref.watch(settingsControllerProvider);
 
-    // Start from the persisted speed preference exactly once.
     if (!_speedInitialized) {
       _speedInitialized = true;
       _speed = settings.playbackSpeed;
@@ -474,12 +482,8 @@ class _AudioPlayerWidgetState extends ConsumerState<AudioPlayerWidget> {
 
     final duration = _estimatedDuration;
 
-    // Rebuild on every TTS state tick so the waveform, icons and timers
-    // react instantly while the voice plays.
     return AnimatedBuilder(
-      animation: Listenable.merge(
-        [tts.isSpeaking, tts.isPaused, tts.progress],
-      ),
+      animation: Listenable.merge([tts.isSpeaking, tts.isPaused, tts.progress]),
       builder: (context, _) {
         final speaking = tts.isSpeaking.value;
         final paused = tts.isPaused.value;
@@ -487,145 +491,195 @@ class _AudioPlayerWidgetState extends ConsumerState<AudioPlayerWidget> {
         final current = Duration(
           milliseconds: (duration.inMilliseconds * progress).round(),
         );
-        return Column(
-          children: [
-            _Waveform(progress: progress, active: speaking),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  tooltip: l10n.resultReplay,
-                  onPressed: () async {
-                    try {
-                      await tts.replay();
-                    } catch (_) {}
-                  },
-                  icon: const Icon(Icons.replay_rounded),
-                ),
-                const SizedBox(width: 8),
-                Material(
-                  shape: const CircleBorder(),
-                  color: AppColors.primary,
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: () async {
-                      final messenger = ScaffoldMessenger.of(context);
-                      try {
-                        if (speaking) {
-                          await tts.pause();
-                        } else if (paused) {
-                          await tts.resume();
-                        } else {
-                          await tts.speak(
-                            widget.text,
-                            gender:
-                                ref.read(settingsControllerProvider).defaultVoice,
-                            speed: _speed,
-                          );
-                        }
-                      } catch (_) {
-                        if (mounted) {
-                          messenger
-                            ..hideCurrentSnackBar()
-                            ..showSnackBar(
-                              SnackBar(content: Text(l10n.ttsError)),
-                            );
-                        }
-                      }
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(14),
-                      child: Icon(
-                        speaking
-                            ? Icons.pause_rounded
-                            : Icons.play_arrow_rounded,
-                        color: Colors.white,
-                        size: 30,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  tooltip: l10n.resultStop,
-                  onPressed: () => tts.stop(),
-                  icon: const Icon(Icons.stop_rounded),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Text(
-                  _fmt(current),
-                  style: TextStyle(fontSize: 11, color: palette.textSoft),
-                ),
-                const Spacer(),
-                Text(
-                  _fmt(duration),
-                  style: TextStyle(fontSize: 11, color: palette.textSoft),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                for (final s in playbackSpeeds)
-                  ChoiceChip(
-                    label: Text('${s}x'),
-                    selected: _speed == s,
-                    onSelected: (_) async {
-                      setState(() => _speed = s);
-                      // Apply to the engine immediately and persist app-wide.
-                      await tts.setSpeed(s);
-                      ref
-                          .read(settingsControllerProvider.notifier)
-                          .setPlaybackSpeed(s);
-                    },
-                    visualDensity: VisualDensity.compact,
-                    labelStyle: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: _speed == s ? Colors.white : palette.primary,
-                    ),
-                    selectedColor: AppColors.primary,
-                    backgroundColor: palette.surfaceAlt,
-                    showCheckmark: false,
-                  ),
-              ],
-            ),
-          ],
+        return _VoiceBar(
+          speaking: speaking,
+          paused: paused,
+          progress: progress,
+          current: current,
+          speed: _speed,
+          dotCtrl: _dotCtrl,
+          onPlayPause: () async {
+            try {
+              if (speaking) {
+                await tts.pause();
+              } else if (paused) {
+                await tts.resume();
+              } else {
+                await tts.speak(
+                  widget.text,
+                  gender: ref.read(settingsControllerProvider).defaultVoice,
+                  speed: _speed,
+                );
+              }
+            } catch (_) {
+              if (mounted) {
+                ScaffoldMessenger.of(context)
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(
+                    SnackBar(content: Text(AppLocalizations.of(context).ttsError)),
+                  );
+              }
+            }
+          },
+          onSpeedChanged: (s) async {
+            setState(() => _speed = s);
+            await tts.setSpeed(s);
+            ref.read(settingsControllerProvider.notifier).setPlaybackSpeed(s);
+          },
+          onStop: () async {
+            try {
+              await tts.stop();
+            } catch (_) {}
+          },
         );
       },
     );
   }
+}
 
-  String _fmt(Duration d) {
-    final m = d.inMinutes.toString().padLeft(2, '0');
-    final s = (d.inSeconds % 60).toString().padLeft(2, '0');
-    return '$m:$s';
+class _VoiceBar extends StatelessWidget {
+  final bool speaking;
+  final bool paused;
+  final double progress;
+  final Duration current;
+  final double speed;
+  final AnimationController dotCtrl;
+  final VoidCallback onPlayPause;
+  final ValueChanged<double> onSpeedChanged;
+  final VoidCallback onStop;
+
+  const _VoiceBar({
+    required this.speaking,
+    required this.paused,
+    required this.progress,
+    required this.current,
+    required this.speed,
+    required this.dotCtrl,
+    required this.onPlayPause,
+    required this.onSpeedChanged,
+    required this.onStop,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2D2D2D),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: onStop,
+            child: const Icon(Icons.delete_outline_rounded,
+                color: Color(0xFFEF5350), size: 22),
+          ),
+          const SizedBox(width: 4),
+          AnimatedBuilder(
+            animation: dotCtrl,
+            builder: (context, _) {
+              return Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color.lerp(
+                    const Color(0xFFEF5350),
+                    const Color(0xFFEF5350).withOpacity(0.3),
+                    speaking ? dotCtrl.value : 0.0,
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '${current.inMinutes.toString().padLeft(2, '0')}:'
+            '${(current.inSeconds % 60).toString().padLeft(2, '0')}',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: _CompactWaveform(progress: progress, active: speaking),
+          ),
+          const SizedBox(width: 4),
+          GestureDetector(
+            onTap: (speaking && !paused) ? onPlayPause : null,
+            child: Icon(
+              Icons.pause_rounded,
+              color: (speaking && !paused)
+                  ? const Color(0xFFEF5350)
+                  : const Color(0xFF888888),
+              size: 26,
+            ),
+          ),
+          const SizedBox(width: 2),
+          GestureDetector(
+            onTap: () {
+              const speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+              final idx = speeds.indexOf(speed);
+              final next = speeds[(idx + 1) % speeds.length];
+              onSpeedChanged(next);
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              decoration: BoxDecoration(
+                color: const Color(0xFF3A3A3A),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                '${speed}x',
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 2),
+          GestureDetector(
+            onTap: onPlayPause,
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: const BoxDecoration(
+                color: Color(0xFF25D366),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                (speaking || paused)
+                    ? Icons.pause_rounded
+                    : Icons.play_arrow_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
-class _Waveform extends StatefulWidget {
+class _CompactWaveform extends StatefulWidget {
   final double progress;
   final bool active;
-  const _Waveform({required this.progress, required this.active});
+  const _CompactWaveform({required this.progress, required this.active});
 
   @override
-  State<_Waveform> createState() => _WaveformState();
+  State<_CompactWaveform> createState() => _CompactWaveformState();
 }
 
-class _WaveformState extends State<_Waveform>
+class _CompactWaveformState extends State<_CompactWaveform>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
+  late final AnimationController _ctrl;
   static const int _bars = 30;
-  // Per-bar random phase + speed so the wave looks organic, like a real
-  // audio level meter (WhatsApp-style), instead of bars moving in sync.
   late final List<double> _phases;
   late final List<double> _speeds;
 
@@ -634,61 +688,63 @@ class _WaveformState extends State<_Waveform>
     super.initState();
     final rnd = math.Random(11);
     _phases = List.generate(_bars, (_) => rnd.nextDouble() * 2 * math.pi);
-    _speeds = List.generate(_bars, (_) => 0.55 + rnd.nextDouble() * 1.0);
-    _controller = AnimationController(
+    _speeds = List.generate(_bars, (_) => 0.6 + rnd.nextDouble() * 1.0);
+    _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1400),
     );
-    if (widget.active) _controller.repeat();
+    if (widget.active) _ctrl.repeat();
   }
 
   @override
-  void didUpdateWidget(covariant _Waveform oldWidget) {
+  void didUpdateWidget(covariant _CompactWaveform oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.active && !_controller.isAnimating) {
-      _controller.repeat();
-    } else if (!widget.active && _controller.isAnimating) {
-      _controller.stop();
-      _controller.value = 0;
+    if (widget.active && !_ctrl.isAnimating) {
+      _ctrl.repeat();
+    } else if (!widget.active && _ctrl.isAnimating) {
+      _ctrl.stop();
+      _ctrl.value = 0;
     }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _ctrl.dispose();
     super.dispose();
   }
 
   double _level(int i) {
-    final t = _controller.value * 2 * math.pi;
+    final t = _ctrl.value * 2 * math.pi;
     final v = (math.sin(t * _speeds[i] + _phases[i]).abs() * 0.7 +
             math.sin(t * _speeds[i] * 2.3 + _phases[i] * 1.7).abs() * 0.3)
         .clamp(0.0, 1.0);
-    return (0.15 + 0.85 * math.pow(v, 1.4)).clamp(0.12, 1.0).toDouble();
+    return (0.12 + 0.88 * math.pow(v, 1.4)).clamp(0.10, 1.0).toDouble();
   }
 
   @override
   Widget build(BuildContext context) {
-    final palette = AppPalette.of(context);
     return AnimatedBuilder(
-      animation: _controller,
+      animation: _ctrl,
       builder: (context, _) {
         return SizedBox(
-          height: 44,
+          height: 32,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: List.generate(_bars, (i) {
-              final animated = widget.active ? _level(i) : 0.10 + (i % 3) * 0.04;
+              final h = widget.active
+                  ? _level(i)
+                  : 0.12 + (i % 4 == 0 ? 0.1 : 0.0);
               final passed = (i + 1) / _bars <= widget.progress;
               return Container(
-                width: 3.5,
-                height: 44 * animated,
-                margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                width: 2.5,
+                height: 32 * h,
+                margin: const EdgeInsets.symmetric(horizontal: 1.2),
                 decoration: BoxDecoration(
-                  color:
-                      passed ? palette.primary : palette.divider,
-                  borderRadius: BorderRadius.circular(4),
+                  color: passed
+                      ? Colors.white
+                      : Colors.white.withOpacity(0.35),
+                  borderRadius: BorderRadius.circular(3),
                 ),
               );
             }),
@@ -698,3 +754,4 @@ class _WaveformState extends State<_Waveform>
     );
   }
 }
+
