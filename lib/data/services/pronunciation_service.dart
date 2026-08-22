@@ -1,5 +1,4 @@
 import '../../core/constants.dart';
-import '../../core/enums.dart';
 import '../models/history_entry.dart';
 import '../models/pronunciation_result.dart';
 import '../models/word_result.dart';
@@ -31,7 +30,6 @@ class PronunciationService {
 
   Future<PronunciationResult> process(
     String text, {
-    VoiceGender voice = VoiceGender.auto,
     double speed = 1.0,
   }) async {
     final trimmed = text.trim();
@@ -65,7 +63,6 @@ class PronunciationService {
       arabicTranslation: translation.translatedText,
       arabicPhonetic: phonetic,
       accent: Constants.accentAmerican,
-      voice: voice,
       speed: speed,
       createdAt: DateTime.now(),
       nativeAudioUrl: audioUrl,

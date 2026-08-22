@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../core/enums.dart';
 import '../data/models/history_entry.dart';
 import '../data/models/pronunciation_result.dart';
 import '../data/models/word_result.dart';
@@ -42,7 +41,7 @@ class HomeController extends StateNotifier<HomeState> {
 
   static final RegExp _arabicRegex = RegExp(r'[\u0600-\u06FF]');
 
-  Future<void> process(String text, {VoiceGender voice = VoiceGender.auto, double speed = 1.0}) async {
+  Future<void> process(String text, {double speed = 1.0}) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) {
       state = state.copyWith(phase: HomePhase.idle, error: AppErrorKind.emptyInput);
@@ -112,7 +111,6 @@ class HomeController extends StateNotifier<HomeState> {
         arabicTranslation: arabicTranslation,
         arabicPhonetic: phonetic,
         accent: 'en-US',
-        voice: voice,
         speed: speed,
         createdAt: DateTime.now(),
         nativeAudioUrl: nativeAudioUrl,

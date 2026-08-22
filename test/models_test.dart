@@ -9,7 +9,6 @@ void main() {
     const settings = AppSettings();
     expect(settings.locale, AppLocale.ar);
     expect(settings.themeMode, AppThemeMode.system);
-    expect(settings.defaultVoice, VoiceGender.auto);
     expect(settings.playbackSpeed, 1.0);
     expect(settings.showArabicPhonetic, isTrue);
   });
@@ -18,7 +17,6 @@ void main() {
     const settings = AppSettings(
       locale: AppLocale.en,
       themeMode: AppThemeMode.dark,
-      defaultVoice: VoiceGender.female,
       playbackSpeed: 1.25,
       showArabicPhonetic: false,
       onboardingSeen: true,
@@ -26,7 +24,6 @@ void main() {
     final restored = AppSettings.fromJson(settings.toJson());
     expect(restored.locale, AppLocale.en);
     expect(restored.themeMode, AppThemeMode.dark);
-    expect(restored.defaultVoice, VoiceGender.female);
     expect(restored.playbackSpeed, 1.25);
     expect(restored.showArabicPhonetic, isFalse);
     expect(restored.onboardingSeen, isTrue);
@@ -38,7 +35,6 @@ void main() {
       arabicTranslation: 'كيف حالك؟',
       arabicPhonetic: 'هاو آر يو؟',
       accent: 'en-US',
-      voice: VoiceGender.male,
       speed: 1.5,
       createdAt: DateTime(2026, 1, 1),
       nativeAudioUrl: 'https://example.com/a.mp3',
@@ -49,7 +45,6 @@ void main() {
     expect(restored.arabicTranslation, result.arabicTranslation);
     expect(restored.arabicPhonetic, result.arabicPhonetic);
     expect(restored.accent, 'en-US');
-    expect(restored.voice, VoiceGender.male);
     expect(restored.speed, 1.5);
     expect(restored.nativeAudioUrl, result.nativeAudioUrl);
     expect(restored.favorite, isTrue);

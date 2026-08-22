@@ -9,7 +9,6 @@ import '../../data/models/pronunciation_result.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/history_provider.dart';
 import '../../providers/services_provider.dart';
-import '../../providers/settings_provider.dart';
 import '../../widgets/empty_state.dart';
 
 class HistoryScreen extends ConsumerStatefulWidget {
@@ -90,7 +89,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       arabicTranslation: entry.arabicTranslation ?? '',
       arabicPhonetic: entry.arabicPhonetic ?? '',
       accent: 'en-US',
-      voice: ref.read(settingsControllerProvider).defaultVoice,
       speed: 1.0,
       createdAt: entry.timestamp,
     );
@@ -243,11 +241,7 @@ class _HistoryTile extends ConsumerWidget {
                       } else if (paused) {
                         await tts.resume();
                       } else {
-                        await tts.speak(
-                          entry.englishText,
-                          gender:
-                              ref.read(settingsControllerProvider).defaultVoice,
-                        );
+                        await tts.speak(entry.englishText);
                       }
                     },
                     child: Container(

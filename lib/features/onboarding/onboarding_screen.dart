@@ -172,7 +172,7 @@ class _GirlImage extends StatelessWidget {
       child: ClipRRect(
         borderRadius: AppRadius.lg,
         child: Image.asset(
-          'assets/images/onboarding_girl.jpeg',
+          'assets/images/onboarding_girl.png',
           height: 300,
           fit: BoxFit.contain,
           errorBuilder: (_, __, ___) => SizedBox(

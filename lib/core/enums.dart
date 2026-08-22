@@ -1,6 +1,3 @@
-/// Voice gender selection.
-enum VoiceGender { auto, male, female }
-
 /// App appearance mode.
 enum AppThemeMode { light, dark, system }
 

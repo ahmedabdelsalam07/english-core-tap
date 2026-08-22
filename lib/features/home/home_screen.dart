@@ -56,18 +56,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     }
   }
 
-static const List<String> _examples = [
-    'hello',
-    'good morning',
-    'how are you',
-    'beautiful',
-    'مرحباً',
-    'صباح الخير',
-    'كيف حالك',
-    'جميل',
-  ];
-
-  static final RegExp _arabicRegex = RegExp(r'[\u0600-\u06FF]');
+static final RegExp _arabicRegex = RegExp(r'[\u0600-\u06FF]');
 
   /// Tags already offered this session. Guards against an endless
   /// prompt-reload-prompt loop if the running build's version constant ever
@@ -156,7 +145,6 @@ static const List<String> _examples = [
     final settings = ref.read(settingsControllerProvider);
     await ref.read(homeControllerProvider.notifier).process(
           text,
-          voice: settings.defaultVoice,
           speed: settings.playbackSpeed,
         );
   }
@@ -251,8 +239,6 @@ static const List<String> _examples = [
                     ),
                   ],
                   const SizedBox(height: 22),
-                  _buildExamples(l10n),
-                  const SizedBox(height: 18),
                   _RecentHistory(onTap: _process),
                 ],
               ),
@@ -486,99 +472,49 @@ ValueListenableBuilder<TextEditingValue>(
 
   Widget _buildVoiceSpeedRow(AppLocalizations l10n, settings) {
     final palette = AppPalette.of(context);
-    final dropdownStyle = TextStyle(
-      color: palette.text,
-      fontSize: 13,
-      fontWeight: FontWeight.w600,
-    );
-    return Row(
-      children: [
-        Expanded(
-          child: SectionCard(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.resultVoice,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: palette.textSoft,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                DropdownButtonHideUnderline(
-                  child: DropdownButton<VoiceGender>(
-                    value: settings.defaultVoice,
-                    isExpanded: true,
-                    isDense: true,
-                    dropdownColor: palette.surface,
-                    style: dropdownStyle,
-                    items: [
-                      for (final v in VoiceGender.values)
-                        DropdownMenuItem(
-                          value: v,
-                          child: Text(voiceLabel(context, v)),
-                        ),
-                    ],
-                    onChanged: (v) {
-                      if (v != null) {
-                        ref
-                            .read(settingsControllerProvider.notifier)
-                            .setDefaultVoice(v);
-                      }
-                    },
-                  ),
-                ),
-              ],
+    return SectionCard(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.resultSpeed,
+            style: TextStyle(
+              fontSize: 11,
+              color: palette.textSoft,
+              fontWeight: FontWeight.w600,
             ),
           ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: SectionCard(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.resultSpeed,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: palette.textSoft,
-                    fontWeight: FontWeight.w600,
+          const SizedBox(height: 4),
+          DropdownButtonHideUnderline(
+            child: DropdownButton<double>(
+              value: settings.playbackSpeed,
+              isExpanded: true,
+              isDense: true,
+              dropdownColor: palette.surface,
+              style: TextStyle(
+                color: palette.text,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+              items: [
+                for (final s in playbackSpeeds)
+                  DropdownMenuItem(
+                    value: s,
+                    child: Text('${s}x'),
                   ),
-                ),
-                const SizedBox(height: 4),
-                DropdownButtonHideUnderline(
-                  child: DropdownButton<double>(
-                    value: settings.playbackSpeed,
-                    isExpanded: true,
-                    isDense: true,
-                    dropdownColor: palette.surface,
-                    style: dropdownStyle,
-                    items: [
-                      for (final s in playbackSpeeds)
-                        DropdownMenuItem(
-                          value: s,
-                          child: Text('${s}x'),
-                        ),
-                    ],
-                    onChanged: (v) {
-                      if (v != null) {
-                        ref
-                            .read(settingsControllerProvider.notifier)
-                            .setPlaybackSpeed(v);
-                      }
-                    },
-                  ),
-                ),
               ],
+              onChanged: (v) {
+                if (v != null) {
+                  ref
+                      .read(settingsControllerProvider.notifier)
+                      .setPlaybackSpeed(v);
+                }
+              },
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -647,43 +583,6 @@ ValueListenableBuilder<TextEditingValue>(
     );
   }
 
-  Widget _buildExamples(AppLocalizations l10n) {
-    final palette = AppPalette.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '${l10n.tryExamples} ',
-          style: TextStyle(
-            fontSize: 13,
-            color: palette.textSoft,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final example in _examples)
-              ActionChip(
-                label: Text(
-                  example,
-                  style: TextStyle(
-                    color: palette.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                onPressed: () {
-                  _controller.text = example;
-                  _process(example);
-                },
-              ),
-          ],
-        ),
-      ],
-    );
-  }
 }
 
 class _ToolButton extends StatelessWidget {

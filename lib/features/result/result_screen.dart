@@ -24,7 +24,6 @@ class ResultScreen extends ConsumerStatefulWidget {
 
 class _ResultScreenState extends ConsumerState<ResultScreen> {
   late PronunciationResult _result;
-  VoiceGender _voice = VoiceGender.auto;
 
   @override
   void initState() {
@@ -56,8 +55,6 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
     final isFavorite = favorites.any(
       (e) => e.result.englishText == _result.englishText,
     );
-    // The result screen follows the app-wide default voice.
-    _voice = settings.defaultVoice;
     final showPhonetic =
         settings.showArabicPhonetic && _result.arabicPhonetic.isNotEmpty;
 
@@ -72,23 +69,13 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _EnglishSection(
-                      result: _result,
-                      voice: _voice,
-                      onVoiceChanged: (v) => ref
-                          .read(settingsControllerProvider.notifier)
-                          .setDefaultVoice(v),
-                    ),
+                    _EnglishSection(result: _result),
                     const SizedBox(height: 16),
                     if (showPhonetic) ...[
                       _ArabicPhoneticSection(result: _result),
                       const SizedBox(height: 16),
                     ],
                     _TranslationSection(result: _result),
-                    if (_result.nativeAudioUrl != null) ...[
-                      const SizedBox(height: 16),
-                      _NativeAudioCard(url: _result.nativeAudioUrl!),
-                    ],
                   ],
                 ),
               ),
@@ -167,13 +154,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
 
 class _EnglishSection extends ConsumerWidget {
   final PronunciationResult result;
-  final VoiceGender voice;
-  final ValueChanged<VoiceGender> onVoiceChanged;
-  const _EnglishSection({
-    required this.result,
-    required this.voice,
-    required this.onVoiceChanged,
-  });
+  const _EnglishSection({required this.result});
 
 @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -211,33 +192,10 @@ class _EnglishSection extends ConsumerWidget {
                   color: AppPalette.of(context).text,
                 ),
           ),
-          const SizedBox(height: 12),
-          _VoiceSelector(voice: voice, onChanged: onVoiceChanged),
-          const SizedBox(height: 4),
-          ValueListenableBuilder<String>(
-            valueListenable: ref.watch(ttsServiceProvider).activeVoiceName,
-            builder: (context, name, __) => name.isEmpty
-                ? const SizedBox.shrink()
-                : Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      '🔊 $name',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textDirection: TextDirection.ltr,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: AppPalette.of(context).textSoft,
-                      ),
-                    ),
-                  ),
-          ),
           const SizedBox(height: 14),
           AudioPlayerWidget(
-            key: ValueKey('${result.englishText}_${result.voice.name}_'
-                '${settings.playbackSpeed}'),
+            key: ValueKey('${result.englishText}_${settings.playbackSpeed}'),
             text: result.englishText,
-            voice: voice,
           ),
         ],
       ),
@@ -267,34 +225,6 @@ class _SectionLabel extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _VoiceSelector extends StatelessWidget {
-  final VoiceGender voice;
-  final ValueChanged<VoiceGender> onChanged;
-  const _VoiceSelector({required this.voice, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return SegmentedButton<VoiceGender>(
-      segments: [
-        ButtonSegment(
-          value: VoiceGender.male,
-          label: Text(l10n.settingsMale),
-          icon: const Icon(Icons.male, size: 16),
-        ),
-        ButtonSegment(
-          value: VoiceGender.female,
-          label: Text(l10n.settingsFemale),
-          icon: const Icon(Icons.female, size: 16),
-        ),
-      ],
-      selected: {voice},
-      showSelectedIcon: false,
-      onSelectionChanged: (s) => onChanged(s.first),
     );
   }
 }
@@ -389,55 +319,12 @@ class _TranslationSection extends StatelessWidget {
   }
 }
 
-class _NativeAudioCard extends ConsumerWidget {
-  final String url;
-  const _NativeAudioCard({required this.url});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-    final audio = ref.watch(audioPlayerServiceProvider);
-    final playing = ref.watch(audioPlayerServiceProvider).playingUrl.value;
-    final isCurrent = playing == url;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: AppRadius.lg,
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.record_voice_over_rounded,
-              color: AppPalette.of(context).primary),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              l10n.resultAccent,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-          IconButton.filled(
-            onPressed:
-                isCurrent ? () => audio.stop() : () => audio.play(url),
-            style: IconButton.styleFrom(backgroundColor: AppColors.primary),
-            icon: Icon(isCurrent ? Icons.stop_rounded : Icons.play_arrow_rounded),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-
-
 /// WhatsApp-style voice message audio player bar.
 class AudioPlayerWidget extends ConsumerStatefulWidget {
   final String text;
-  final VoiceGender voice;
   const AudioPlayerWidget({
     super.key,
     required this.text,
-    required this.voice,
   });
 
   @override
@@ -449,7 +336,6 @@ class _AudioPlayerWidgetState extends ConsumerState<AudioPlayerWidget>
     with SingleTickerProviderStateMixin {
   double _speed = 1.0;
   bool _speedInitialized = false;
-  final int _estimatedMsPerChar = 90;
   late final AnimationController _dotCtrl;
 
   @override
@@ -467,9 +353,6 @@ class _AudioPlayerWidgetState extends ConsumerState<AudioPlayerWidget>
     super.dispose();
   }
 
-  Duration get _estimatedDuration => Duration(
-      milliseconds: (widget.text.length * _estimatedMsPerChar).clamp(800, 30000));
-
   @override
   Widget build(BuildContext context) {
     final tts = ref.watch(ttsServiceProvider);
@@ -480,22 +363,16 @@ class _AudioPlayerWidgetState extends ConsumerState<AudioPlayerWidget>
       _speed = settings.playbackSpeed;
     }
 
-    final duration = _estimatedDuration;
-
     return AnimatedBuilder(
       animation: Listenable.merge([tts.isSpeaking, tts.isPaused, tts.progress]),
       builder: (context, _) {
         final speaking = tts.isSpeaking.value;
         final paused = tts.isPaused.value;
         final progress = tts.progress.value;
-        final current = Duration(
-          milliseconds: (duration.inMilliseconds * progress).round(),
-        );
         return _VoiceBar(
           speaking: speaking,
           paused: paused,
           progress: progress,
-          current: current,
           speed: _speed,
           dotCtrl: _dotCtrl,
           onPlayPause: () async {
@@ -507,11 +384,7 @@ class _AudioPlayerWidgetState extends ConsumerState<AudioPlayerWidget>
               } else if (paused) {
                 await tts.resume();
               } else {
-                await tts.speak(
-                  widget.text,
-                  gender: ref.read(settingsControllerProvider).defaultVoice,
-                  speed: _speed,
-                );
+                await tts.speak(widget.text, speed: _speed);
               }
             } catch (_) {
               if (mounted) {
@@ -541,7 +414,6 @@ class _VoiceBar extends StatelessWidget {
   final bool speaking;
   final bool paused;
   final double progress;
-  final Duration current;
   final double speed;
   final AnimationController dotCtrl;
   final VoidCallback onPlayPause;
@@ -552,7 +424,6 @@ class _VoiceBar extends StatelessWidget {
     required this.speaking,
     required this.paused,
     required this.progress,
-    required this.current,
     required this.speed,
     required this.dotCtrl,
     required this.onPlayPause,
@@ -593,16 +464,6 @@ class _VoiceBar extends StatelessWidget {
               );
             },
           ),
-          const SizedBox(width: 4),
-          Text(
-            '${current.inMinutes.toString().padLeft(2, '0')}:'
-            '${(current.inSeconds % 60).toString().padLeft(2, '0')}',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
           const SizedBox(width: 6),
           Expanded(
             child: _CompactWaveform(progress: progress, active: speaking),
@@ -620,12 +481,7 @@ class _VoiceBar extends StatelessWidget {
           ),
           const SizedBox(width: 2),
           GestureDetector(
-            onTap: () {
-              const speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
-              final idx = speeds.indexOf(speed);
-              final next = speeds[(idx + 1) % speeds.length];
-              onSpeedChanged(next);
-            },
+            onTap: () => _showSpeedSheet(context),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
               decoration: BoxDecoration(
@@ -662,6 +518,65 @@ class _VoiceBar extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Bottom sheet with all available speed presets, matching the chips used
+  /// on the settings screen.
+  void _showSpeedSheet(BuildContext context) {
+    final palette = AppPalette.of(context);
+    final l10n = AppLocalizations.of(context);
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: palette.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetCtx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Text(
+                  l10n.resultSpeed,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                    color: palette.text,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final s in playbackSpeeds)
+                    ChoiceChip(
+                      label: Text('${s}x'),
+                      selected: s == speed,
+                      onSelected: (_) {
+                        Navigator.of(sheetCtx).pop();
+                        onSpeedChanged(s);
+                      },
+                      labelStyle: TextStyle(
+                        color:
+                            s == speed ? Colors.white : palette.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      selectedColor: AppColors.primary,
+                      backgroundColor: palette.surfaceAlt,
+                      showCheckmark: false,
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

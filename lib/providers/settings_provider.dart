@@ -28,7 +28,6 @@ class SettingsController extends Notifier<AppSettings> {
     // from the very first utterance.
     try {
       await ref.read(ttsServiceProvider).applySettings(
-            gender: loaded.defaultVoice,
             speed: loaded.playbackSpeed,
           );
     } catch (_) {}
@@ -46,14 +45,6 @@ class SettingsController extends Notifier<AppSettings> {
 
   Future<void> setLocale(AppLocale locale) =>
       _persist(state.copyWith(locale: locale));
-
-  /// Applies the voice to the TTS engine immediately and persists it.
-  Future<void> setDefaultVoice(VoiceGender voice) async {
-    await _persist(state.copyWith(defaultVoice: voice));
-    try {
-      await ref.read(ttsServiceProvider).setGender(voice);
-    } catch (_) {}
-  }
 
   /// Applies the speed to the TTS engine immediately and persists it.
   Future<void> setPlaybackSpeed(double speed) async {

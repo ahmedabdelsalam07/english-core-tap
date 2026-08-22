@@ -404,12 +404,6 @@ abstract class AppLocalizations {
   /// **'Clear'**
   String get clearHistory;
 
-  /// No description provided for @tryExamples.
-  ///
-  /// In en, this message translates to:
-  /// **'Try:'**
-  String get tryExamples;
-
   /// No description provided for @resultTitle.
   ///
   /// In en, this message translates to:
@@ -469,18 +463,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save to favorites'**
   String get resultAddFavorite;
-
-  /// No description provided for @resultAccent.
-  ///
-  /// In en, this message translates to:
-  /// **'American English'**
-  String get resultAccent;
-
-  /// No description provided for @resultVoice.
-  ///
-  /// In en, this message translates to:
-  /// **'Voice'**
-  String get resultVoice;
 
   /// No description provided for @resultSpeed.
   ///
@@ -769,30 +751,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Automatic'**
   String get settingsSystem;
-
-  /// No description provided for @settingsDefaultVoice.
-  ///
-  /// In en, this message translates to:
-  /// **'Default Voice'**
-  String get settingsDefaultVoice;
-
-  /// No description provided for @settingsMale.
-  ///
-  /// In en, this message translates to:
-  /// **'Male'**
-  String get settingsMale;
-
-  /// No description provided for @settingsFemale.
-  ///
-  /// In en, this message translates to:
-  /// **'Female'**
-  String get settingsFemale;
-
-  /// No description provided for @settingsAuto.
-  ///
-  /// In en, this message translates to:
-  /// **'Automatic'**
-  String get settingsAuto;
 
   /// No description provided for @settingsSpeed.
   ///

@@ -1,6 +1,5 @@
 ﻿import 'package:flutter/material.dart';
 
-import '../core/enums.dart';
 import '../data/services/api_config.dart';
 import '../l10n/app_localizations.dart';
 
@@ -38,18 +37,5 @@ String errorMessage(BuildContext context, AppErrorKind kind) {
       return l10n.loginErrorBackend;
     case AppErrorKind.unknown:
       return l10n.unknownError;
-  }
-}
-
-/// Formats a voice gender label.
-String voiceLabel(BuildContext context, VoiceGender gender) {
-  final l10n = AppLocalizations.of(context);
-  switch (gender) {
-    case VoiceGender.male:
-      return l10n.settingsMale;
-    case VoiceGender.female:
-      return l10n.settingsFemale;
-    case VoiceGender.auto:
-      return l10n.settingsAuto;
   }
 }

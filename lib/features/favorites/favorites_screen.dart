@@ -8,7 +8,6 @@ import '../../data/models/favorite_entry.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/services_provider.dart';
-import '../../providers/settings_provider.dart';
 import '../../widgets/empty_state.dart';
 
 class FavoritesScreen extends ConsumerWidget {
@@ -135,9 +134,6 @@ class _FavoriteCard extends ConsumerWidget {
                           } else {
                             await tts.speak(
                               result.englishText,
-                              gender: ref
-                                  .read(settingsControllerProvider)
-                                  .defaultVoice,
                               speed: result.speed,
                             );
                           }

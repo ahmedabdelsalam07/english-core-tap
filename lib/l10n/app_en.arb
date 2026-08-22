@@ -56,7 +56,7 @@
   "mainCtaLoading3": "Translating...",
   "recentHistory": "Recent",
   "clearHistory": "Clear",
-  "tryExamples": "Try:",
+
 
   "resultTitle": "Result",
   "resultEnglish": "English",
@@ -68,8 +68,6 @@
   "resultFavoriteAdd": "Saved to favorites",
   "resultFavoriteRemove": "Removed from favorites",
   "resultAddFavorite": "Save to favorites",
-  "resultAccent": "American English",
-  "resultVoice": "Voice",
   "resultSpeed": "Speed",
   "resultPlay": "Play",
   "resultPause": "Pause",
@@ -124,10 +122,6 @@
   "settingsLight": "Light",
   "settingsDark": "Dark",
   "settingsSystem": "Automatic",
-  "settingsDefaultVoice": "Default Voice",
-  "settingsMale": "Male",
-  "settingsFemale": "Female",
-  "settingsAuto": "Automatic",
   "settingsSpeed": "Pronunciation Speed",
   "settingsAccent": "Accent",
   "settingsAccentUs": "American English",

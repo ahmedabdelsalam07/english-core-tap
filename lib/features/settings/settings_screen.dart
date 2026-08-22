@@ -10,7 +10,6 @@ import '../../data/services/update_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/history_provider.dart';
-import '../../providers/services_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../widgets/language_switcher.dart';
 import '../../widgets/section_card.dart';
@@ -59,90 +58,6 @@ class SettingsScreen extends ConsumerWidget {
               selected: {settings.themeMode},
               showSelectedIcon: false,
               onSelectionChanged: (s) => controller.setThemeMode(s.first),
-            ),
-          ),
-          const SizedBox(height: 16),
-          _SettingsSection(
-            title: l10n.settingsDefaultVoice,
-            icon: Icons.record_voice_over_outlined,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SegmentedButton<VoiceGender>(
-                  segments: [
-                    ButtonSegment(
-                      value: VoiceGender.auto,
-                      label: Text(l10n.settingsAuto),
-                    ),
-                    ButtonSegment(
-                      value: VoiceGender.male,
-                      label: Text(l10n.settingsMale),
-                      icon: const Icon(Icons.male, size: 16),
-                    ),
-                    ButtonSegment(
-                      value: VoiceGender.female,
-                      label: Text(l10n.settingsFemale),
-                      icon: const Icon(Icons.female, size: 16),
-                    ),
-                  ],
-                  selected: {settings.defaultVoice},
-                  showSelectedIcon: false,
-                  onSelectionChanged: (s) =>
-                      controller.setDefaultVoice(s.first),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ValueListenableBuilder<String>(
-                        valueListenable:
-                            ref.watch(ttsServiceProvider).activeVoiceName,
-                        builder: (context, name, __) => Text(
-                          name.isEmpty ? '—' : '🔊 $name',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textDirection: TextDirection.ltr,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: palette.textSoft,
-                          ),
-                        ),
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () async {
-                        final messenger =
-                            ScaffoldMessenger.of(context);
-                        try {
-                          await ref
-                              .read(ttsServiceProvider)
-                              .speak(
-                                'Hello, this is my English Core voice.',
-                                gender: settings.defaultVoice,
-                                speed: settings.playbackSpeed,
-                              );
-                        } catch (_) {
-                          messenger
-                            ..hideCurrentSnackBar()
-                            ..showSnackBar(
-                              SnackBar(content: Text(l10n.ttsError)),
-                            );
-                        }
-                      },
-                      child: Container(
-                        width: 38,
-                        height: 38,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.success,
-                        ),
-                        child: const Icon(Icons.play_arrow_rounded,
-                            size: 24, color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
             ),
           ),
           const SizedBox(height: 16),

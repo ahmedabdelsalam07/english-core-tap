@@ -170,9 +170,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get clearHistory => 'مسح';
 
   @override
-  String get tryExamples => 'جرّب:';
-
-  @override
   String get resultTitle => 'النتيجة';
 
   @override
@@ -201,12 +198,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get resultAddFavorite => 'حفظ في المفضلة';
-
-  @override
-  String get resultAccent => 'الإنجليزية الأمريكية';
-
-  @override
-  String get resultVoice => 'الصوت';
 
   @override
   String get resultSpeed => 'السرعة';
@@ -357,18 +348,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get settingsSystem => 'تلقائي';
-
-  @override
-  String get settingsDefaultVoice => 'الصوت الافتراضي';
-
-  @override
-  String get settingsMale => 'رجل';
-
-  @override
-  String get settingsFemale => 'امرأة';
-
-  @override
-  String get settingsAuto => 'تلقائي';
 
   @override
   String get settingsSpeed => 'سرعة النطق';

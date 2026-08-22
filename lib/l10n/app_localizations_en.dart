@@ -171,9 +171,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clearHistory => 'Clear';
 
   @override
-  String get tryExamples => 'Try:';
-
-  @override
   String get resultTitle => 'Result';
 
   @override
@@ -202,12 +199,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resultAddFavorite => 'Save to favorites';
-
-  @override
-  String get resultAccent => 'American English';
-
-  @override
-  String get resultVoice => 'Voice';
 
   @override
   String get resultSpeed => 'Speed';
@@ -365,18 +356,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsSystem => 'Automatic';
-
-  @override
-  String get settingsDefaultVoice => 'Default Voice';
-
-  @override
-  String get settingsMale => 'Male';
-
-  @override
-  String get settingsFemale => 'Female';
-
-  @override
-  String get settingsAuto => 'Automatic';
 
   @override
   String get settingsSpeed => 'Pronunciation Speed';
