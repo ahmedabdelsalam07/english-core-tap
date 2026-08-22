@@ -472,127 +472,135 @@ class _AudioPlayerWidgetState extends ConsumerState<AudioPlayerWidget> {
       _speed = settings.playbackSpeed;
     }
 
-    final speaking = tts.isSpeaking.value;
-    final paused = tts.isPaused.value;
-    final progress = tts.progress.value;
-
     final duration = _estimatedDuration;
-    final current =
-        Duration(milliseconds: (duration.inMilliseconds * progress).round());
 
-    return Column(
-      children: [
-        _Waveform(progress: progress, active: speaking || paused),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+    // Rebuild on every TTS state tick so the waveform, icons and timers
+    // react instantly while the voice plays.
+    return AnimatedBuilder(
+      animation: Listenable.merge(
+        [tts.isSpeaking, tts.isPaused, tts.progress],
+      ),
+      builder: (context, _) {
+        final speaking = tts.isSpeaking.value;
+        final paused = tts.isPaused.value;
+        final progress = tts.progress.value;
+        final current = Duration(
+          milliseconds: (duration.inMilliseconds * progress).round(),
+        );
+        return Column(
           children: [
-            IconButton(
-              tooltip: l10n.resultReplay,
-              onPressed: () async {
-                try {
-                  await tts.replay();
-                } catch (_) {}
-              },
-              icon: const Icon(Icons.replay_rounded),
-            ),
-            const SizedBox(width: 8),
-            Material(
-              shape: const CircleBorder(),
-              color: AppColors.primary,
-              child: InkWell(
-                customBorder: const CircleBorder(),
-onTap: () async {
-                  final messenger = ScaffoldMessenger.of(context);
-                  try {
-                    if (speaking) {
-                      await tts.pause();
-                    } else if (paused) {
-                      await tts.resume();
-                     } else {
-                       await tts.speak(
-                         widget.text,
-                         gender: ref.read(settingsControllerProvider).defaultVoice,
-                         speed: _speed,
-                       );
-                     }
-                  } catch (_) {
-                    if (mounted) {
-                      messenger
-                        ..hideCurrentSnackBar()
-                        ..showSnackBar(
-                          SnackBar(content: Text(l10n.ttsError)),
-                        );
-                    }
-                  }
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Icon(
-                    speaking
-                        ? Icons.pause_rounded
-                        : paused
-                            ? Icons.play_arrow_rounded
+            _Waveform(progress: progress, active: speaking),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  tooltip: l10n.resultReplay,
+                  onPressed: () async {
+                    try {
+                      await tts.replay();
+                    } catch (_) {}
+                  },
+                  icon: const Icon(Icons.replay_rounded),
+                ),
+                const SizedBox(width: 8),
+                Material(
+                  shape: const CircleBorder(),
+                  color: AppColors.primary,
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      try {
+                        if (speaking) {
+                          await tts.pause();
+                        } else if (paused) {
+                          await tts.resume();
+                        } else {
+                          await tts.speak(
+                            widget.text,
+                            gender:
+                                ref.read(settingsControllerProvider).defaultVoice,
+                            speed: _speed,
+                          );
+                        }
+                      } catch (_) {
+                        if (mounted) {
+                          messenger
+                            ..hideCurrentSnackBar()
+                            ..showSnackBar(
+                              SnackBar(content: Text(l10n.ttsError)),
+                            );
+                        }
+                      }
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Icon(
+                        speaking
+                            ? Icons.pause_rounded
                             : Icons.play_arrow_rounded,
-                    color: Colors.white,
-                    size: 30,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            IconButton(
-              tooltip: l10n.resultStop,
-              onPressed: () => tts.stop(),
-              icon: const Icon(Icons.stop_rounded),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Text(
-              _fmt(current),
-              style: TextStyle(fontSize: 11, color: palette.textSoft),
-            ),
-            const Spacer(),
-            Text(
-              _fmt(duration),
-              style: TextStyle(fontSize: 11, color: palette.textSoft),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 6,
-          runSpacing: 6,
-          children: [
-            for (final s in playbackSpeeds)
-              ChoiceChip(
-                label: Text('${s}x'),
-                selected: _speed == s,
-                onSelected: (_) async {
-                  setState(() => _speed = s);
-                  // Apply to the engine immediately and persist app-wide.
-                  await tts.setSpeed(s);
-                  ref
-                      .read(settingsControllerProvider.notifier)
-                      .setPlaybackSpeed(s);
-                },
-                visualDensity: VisualDensity.compact,
-                labelStyle: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: _speed == s ? Colors.white : palette.primary,
+                const SizedBox(width: 8),
+                IconButton(
+                  tooltip: l10n.resultStop,
+                  onPressed: () => tts.stop(),
+                  icon: const Icon(Icons.stop_rounded),
                 ),
-                selectedColor: AppColors.primary,
-                backgroundColor: palette.surfaceAlt,
-                showCheckmark: false,
-              ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Text(
+                  _fmt(current),
+                  style: TextStyle(fontSize: 11, color: palette.textSoft),
+                ),
+                const Spacer(),
+                Text(
+                  _fmt(duration),
+                  style: TextStyle(fontSize: 11, color: palette.textSoft),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final s in playbackSpeeds)
+                  ChoiceChip(
+                    label: Text('${s}x'),
+                    selected: _speed == s,
+                    onSelected: (_) async {
+                      setState(() => _speed = s);
+                      // Apply to the engine immediately and persist app-wide.
+                      await tts.setSpeed(s);
+                      ref
+                          .read(settingsControllerProvider.notifier)
+                          .setPlaybackSpeed(s);
+                    },
+                    visualDensity: VisualDensity.compact,
+                    labelStyle: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: _speed == s ? Colors.white : palette.primary,
+                    ),
+                    selectedColor: AppColors.primary,
+                    backgroundColor: palette.surfaceAlt,
+                    showCheckmark: false,
+                  ),
+              ],
+            ),
           ],
-        ),
-      ],
+        );
+      },
     );
   }
 
