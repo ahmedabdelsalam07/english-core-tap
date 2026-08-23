@@ -182,9 +182,10 @@ class _GirlImage extends StatelessWidget {
               ),
             ),
           ),
-          // Full character overflowing above the frame — no clipping.
+          // Full character overflowing above the frame — her bottom edge
+          // sits flush on the frame's bottom edge, zero gap.
           Positioned(
-            bottom: 14,
+            bottom: 0,
             child: Image.asset(
               'assets/images/onboarding_girl.png',
               height: 322,
