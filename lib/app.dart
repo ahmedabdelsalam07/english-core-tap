@@ -16,8 +16,10 @@ class EnglishCoreTapApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsControllerProvider);
-    // Created once and kept alive — never recreated on rebuilds.
+    // Created once and kept alive - never recreated on rebuilds.
     final router = ref.watch(appRouterProvider);
+    // Start the single-device session heartbeat.
+    ref.watch(sessionKickCheckerProvider);
 
     // Refresh routing only when auth / onboarding state actually changes
     // (language & theme are handled by MaterialApp directly, so changing
@@ -47,6 +49,42 @@ class EnglishCoreTapApp extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       routerConfig: router,
+      builder: (context, child) =>
+          _SessionKickBanner(child: child ?? const SizedBox.shrink()),
     );
+  }
+}
+
+/// Shows a friendly notice when this device was signed out because the same
+/// account was opened on another device.
+class _SessionKickBanner extends ConsumerWidget {
+  const _SessionKickBanner({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen(kickedFromOtherDeviceProvider, (previous, kicked) {
+      if (kicked && previous != true) {
+        final l10n = AppLocalizations.of(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 6),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            content: Row(
+              children: [
+                const Icon(Icons.phonelink_off_rounded, color: Colors.white),
+                const SizedBox(width: 10),
+                Expanded(child: Text(l10n.sessionKickMessage)),
+              ],
+            ),
+          ),
+        );
+      }
+    });
+    return child;
   }
 }

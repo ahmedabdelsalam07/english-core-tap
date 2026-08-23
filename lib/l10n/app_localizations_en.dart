@@ -114,6 +114,27 @@ class AppLocalizationsEn extends AppLocalizations {
       'Secure private access. Only authorized accounts can sign in.';
 
   @override
+  String get sessionTakenTitle => 'Account open on another device';
+
+  @override
+  String get sessionTakenBody =>
+      'The same account can\'t be open on two devices at the same time.\n\nIf you continue signing in on this device, the other device will be signed out automatically and you can keep using your account here.';
+
+  @override
+  String get sessionTakenConfirm => 'Sign out the other device and continue';
+
+  @override
+  String get sessionTakenCancel => 'Cancel';
+
+  @override
+  String get sessionTakenError =>
+      'This account is currently open on another device. Sign out there first, or continue on this device.';
+
+  @override
+  String get sessionKickMessage =>
+      'You were signed out because your account was opened on another device';
+
+  @override
   String get homeTitle => 'Pronounce English';
 
   @override

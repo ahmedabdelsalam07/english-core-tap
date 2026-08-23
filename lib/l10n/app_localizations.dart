@@ -296,6 +296,42 @@ abstract class AppLocalizations {
   /// **'Secure private access. Only authorized accounts can sign in.'**
   String get loginSecureNote;
 
+  /// No description provided for @sessionTakenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Account open on another device'**
+  String get sessionTakenTitle;
+
+  /// No description provided for @sessionTakenBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The same account can\'t be open on two devices at the same time.\n\nIf you continue signing in on this device, the other device will be signed out automatically and you can keep using your account here.'**
+  String get sessionTakenBody;
+
+  /// No description provided for @sessionTakenConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out the other device and continue'**
+  String get sessionTakenConfirm;
+
+  /// No description provided for @sessionTakenCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get sessionTakenCancel;
+
+  /// No description provided for @sessionTakenError.
+  ///
+  /// In en, this message translates to:
+  /// **'This account is currently open on another device. Sign out there first, or continue on this device.'**
+  String get sessionTakenError;
+
+  /// No description provided for @sessionKickMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You were signed out because your account was opened on another device'**
+  String get sessionKickMessage;
+
   /// No description provided for @homeTitle.
   ///
   /// In en, this message translates to:

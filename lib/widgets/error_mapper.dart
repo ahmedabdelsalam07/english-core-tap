@@ -35,6 +35,8 @@ String errorMessage(BuildContext context, AppErrorKind kind) {
       return l10n.loginErrorNetwork;
     case AppErrorKind.backendNotConfigured:
       return l10n.loginErrorBackend;
+    case AppErrorKind.sessionTaken:
+      return l10n.sessionTakenError;
     case AppErrorKind.unknown:
       return l10n.unknownError;
   }

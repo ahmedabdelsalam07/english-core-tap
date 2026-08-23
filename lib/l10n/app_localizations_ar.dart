@@ -113,6 +113,26 @@ class AppLocalizationsAr extends AppLocalizations {
       'دخول خاص وآمن. يمكن تسجيل الدخول للحسابات المصرح لها فقط.';
 
   @override
+  String get sessionTakenTitle => 'الحساب مفتوح على جهاز آخر';
+
+  @override
+  String get sessionTakenBody =>
+      'نفس الحساب مش ممكن يتفتح من جهازين في نفس الوقت.\n\nلو واصلت تسجيل الدخول من الجهاز ده، هيتم تسجيل الخروج تلقائيًا من الجهاز الآخر وتقدر تستخدم حسابك من هنا عادي.';
+
+  @override
+  String get sessionTakenConfirm => 'تسجيل خروج الجهاز الآخر والدخول من هنا';
+
+  @override
+  String get sessionTakenCancel => 'إلغاء';
+
+  @override
+  String get sessionTakenError =>
+      'الحساب مفتوح حاليًا على جهاز آخر. سجّل الخروج هناك أولًا أو أكمل الدخول من هذا الجهاز.';
+
+  @override
+  String get sessionKickMessage => 'تم تسجيل خروجك لأن حسابك اتفتح من جهاز آخر';
+
+  @override
   String get homeTitle => 'انطق الإنجليزية';
 
   @override

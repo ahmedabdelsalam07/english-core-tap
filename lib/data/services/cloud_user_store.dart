@@ -63,6 +63,24 @@ class CloudUserStore {
     }
   }
 
+  /// Reads a single string field of the user document; null on any failure.
+  Future<String?> readField(String uid, String field) async {
+    final token = await _idToken();
+    if (token == null || token.isEmpty) return null;
+    try {
+      final response = await _client
+          .get(_docUri(uid), headers: {'Authorization': 'Bearer $token'})
+          .timeout(_timeout);
+      if (response.statusCode != 200) return null;
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      final fields = body['fields'] as Map<String, dynamic>? ?? const {};
+      return (fields[field] as Map<String, dynamic>?)?['stringValue']
+          as String?;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Persists one field of the user document. Returns true on success.
   Future<bool> saveField(
     String uid, {

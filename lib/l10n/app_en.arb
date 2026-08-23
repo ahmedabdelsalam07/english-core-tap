@@ -37,6 +37,12 @@
   "loginFieldRequired": "Please enter your email and password.",
   "loginEmailInvalid": "Please enter a valid email address.",
   "loginSecureNote": "Secure private access. Only authorized accounts can sign in.",
+  "sessionTakenTitle": "Account open on another device",
+  "sessionTakenBody": "The same account can't be open on two devices at the same time.\n\nIf you continue signing in on this device, the other device will be signed out automatically and you can keep using your account here.",
+  "sessionTakenConfirm": "Sign out the other device and continue",
+  "sessionTakenCancel": "Cancel",
+  "sessionTakenError": "This account is currently open on another device. Sign out there first, or continue on this device.",
+  "sessionKickMessage": "You were signed out because your account was opened on another device",
 
   "homeTitle": "Pronounce English",
   "homeAccent": "in American accent",

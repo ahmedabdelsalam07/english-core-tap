@@ -1,7 +1,7 @@
-name: english_core_tap
-description: English Core TaP - تطبيق تعلم النطق الأمريكي مع الترجمة والكتابة الصوتية بالعربية. English Core - MR. THARWAT TAWFIQ.
+﻿name: english_core_tap
+description: English Core TaP - ØªØ·Ø¨ÙŠÙ‚ ØªØ¹Ù„Ù… Ø§Ù„Ù†Ø·Ù‚ Ø§Ù„Ø£Ù…Ø±ÙŠÙƒÙŠ Ù…Ø¹ Ø§Ù„ØªØ±Ø¬Ù…Ø© ÙˆØ§Ù„ÙƒØªØ§Ø¨Ø© Ø§Ù„ØµÙˆØªÙŠØ© Ø¨Ø§Ù„Ø¹Ø±Ø¨ÙŠØ©. English Core - MR. THARWAT TAWFIQ.
 publish_to: 'none'
-version: 1.0.31+31
+version: 1.0.32+32
 
 environment:
   sdk: '>=3.3.0 <4.0.0'

@@ -36,7 +36,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _login() async {
+  Future<void> _login({bool takeOver = false}) async {
     final l10n = AppLocalizations.of(context);
     final email = _email.text.trim();
     final password = _password.text;
@@ -53,20 +53,70 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     FocusScope.of(context).unfocus();
     setState(() => _error = null);
     final controller = ref.read(authControllerProvider.notifier);
-    await controller.login(email, password);
-
-    if (!mounted) return;
-    final state = ref.read(authControllerProvider);
-    if (state.hasValue && state.value != null) {
-      context.go('/shell/home');
-    } else if (state.hasError) {
-      final error = state.error;
-      if (error is AppException) {
-        setState(() => _error = errorMessage(context, error.kind));
-      } else {
-        setState(() => _error = l10n.loginErrorNetwork);
+    try {
+      await controller.login(email, password, takeOverOtherDevice: takeOver);
+    } on AppException catch (error) {
+      if (!mounted) return;
+      if (error.kind == AppErrorKind.sessionTaken && !takeOver) {
+        final confirmed = await _confirmTakeover(l10n);
+        if (!mounted) return;
+        if (confirmed) {
+          await _login(takeOver: true);
+        }
+        return;
       }
+      setState(() => _error = errorMessage(context, error.kind));
+      return;
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _error = l10n.loginErrorNetwork);
+      return;
     }
+    if (!mounted) return;
+    context.go('/shell/home');
+  }
+
+  Future<bool> _confirmTakeover(AppLocalizations l10n) async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        title: Row(
+          children: [
+            Icon(
+              Icons.phonelink_lock_rounded,
+              color: Theme.of(dialogContext).colorScheme.primary,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                l10n.sessionTakenTitle,
+                style: const TextStyle(fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          l10n.sessionTakenBody,
+          style: const TextStyle(height: 1.6, fontSize: 14),
+        ),
+        actionsAlignment: MainAxisAlignment.start,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n.sessionTakenCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(l10n.sessionTakenConfirm),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
   }
 
   @override
@@ -186,15 +236,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ],
                   const SizedBox(height: 24),
-                  Material(
-                    borderRadius: AppRadius.md,
-                    clipBehavior: Clip.antiAlias,
-                    child: Ink(
-                      decoration: const BoxDecoration(
-                        gradient: AppColors.brandGradient,
-                      ),
-                      child: InkWell(
-                        onTap: (loading || !configured) ? null : _login,
+                   Material(
+                     borderRadius: AppRadius.md,
+                     clipBehavior: Clip.antiAlias,
+                     child: Ink(
+                       decoration: const BoxDecoration(
+                         gradient: AppColors.brandGradient,
+                       ),
+                       child: InkWell(
+                         onTap: (loading || !configured) ? null : () => _login(),
                         child: Container(
                           height: 56,
                           alignment: Alignment.center,

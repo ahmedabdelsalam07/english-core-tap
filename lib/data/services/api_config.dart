@@ -40,6 +40,7 @@ enum AppErrorKind {
   authInvalid,
   authNetwork,
   backendNotConfigured,
+  sessionTaken,
   unknown,
 }
 

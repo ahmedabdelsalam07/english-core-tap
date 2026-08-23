@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:english_core_tap/app.dart';
 import 'package:english_core_tap/features/onboarding/onboarding_screen.dart';
+import 'package:english_core_tap/providers/auth_provider.dart';
 
 void main() {
   setUp(() {
@@ -13,7 +14,13 @@ void main() {
   testWidgets('app boots through splash to onboarding without redirect loop',
       (WidgetTester tester) async {
     await tester.pumpWidget(
-      const ProviderScope(child: EnglishCoreTapApp()),
+      ProviderScope(
+        overrides: [
+          // No session heartbeat timers in widget tests.
+          sessionKickCheckerProvider.overrideWithValue(null),
+        ],
+        child: const EnglishCoreTapApp(),
+      ),
     );
     await tester.pump();
 

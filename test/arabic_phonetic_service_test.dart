@@ -7,12 +7,40 @@ void main() {
   test('produces natural Arabic phonetic for common phrases', () {
     expect(service.toArabicPhonetic('how are you'), 'هاو آر يو');
     expect(service.toArabicPhonetic('hello'), 'هَلو');
-    expect(service.toArabicPhonetic('good morning'), 'قود مورنينج');
+    expect(service.toArabicPhonetic('good morning'), 'جود مورنينج');
+  });
+
+  test('english g is always written with jeem, never qaf', () {
+    expect(service.toArabicPhonetic('good'), 'جود');
+    expect(service.toArabicPhonetic('good night'), 'جود نايت');
+    expect(service.toArabicPhonetic('big'), 'بيج');
+    expect(service.toArabicPhonetic('compare'), 'كمبير');
+    // engine path too: g -> dʒ -> ج
+    expect(service.toArabicPhonetic('gadget').contains('ق'), isFalse);
+    expect(service.toArabicPhonetic('gadget').contains('ج'), isTrue);
+  });
+
+  test('output never ends on a bare short-vowel mark', () {
+    const marks = ['\u064E', '\u0650', '\u064F'];
+    for (final word in ['compare', 'better', 'computer', 'water']) {
+      final out = service.toArabicPhonetic(word);
+      for (final m in marks) {
+        expect(out.endsWith(m), isFalse, reason: word);
+      }
+    }
+    // IPA hint missing the final r still yields readable letters
+    final hinted = service.toArabicPhonetic(
+      'compare',
+      ipaHints: {'compare': 'kəmˈpɛə'},
+    );
+    for (final m in marks) {
+      expect(hinted.endsWith(m), isFalse);
+    }
   });
 
   test('uses IPA to produce accurate diacritic transcription', () {
-    // /ˈduːɪŋ/ -> دووِنغ
-    expect(service.toArabicPhonetic('doing'), 'دووِنغ');
+    // /ˈduːɪŋ/ -> دوينج
+    expect(service.toArabicPhonetic('doing'), 'دوينج');
     // /ˈbjuːtɪfəl/ -> بيوتِفُل
     expect(service.toArabicPhonetic('beautiful'), 'بيوتِفُل');
     // /ˈkʌmftərbəl/ -> كَمفْتَرَبُل
