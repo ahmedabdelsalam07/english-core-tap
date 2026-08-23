@@ -45,6 +45,9 @@ jobs:
       - name: Copy APK into web bundle
         run: cp build/app/outputs/flutter-apk/app-release.apk build/web/english-core-tap.apk
 
+      - name: Copy privacy policy page
+        run: cp tooling/privacy.html build/web/privacy.html
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
