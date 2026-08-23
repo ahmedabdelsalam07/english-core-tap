@@ -1,4 +1,4 @@
-﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,6 +30,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen>
     with SingleTickerProviderStateMixin {
   final TextEditingController _controller = TextEditingController();
+  // Cached in initState so dispose() never touches "ref" after unmount.
+  late final SpeechService _speech = ref.read(speechServiceProvider);
   late final AnimationController _micPulseCtrl;
   SpeechLang _speechLang = SpeechLang.english;
 
@@ -41,7 +43,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       duration: const Duration(milliseconds: 900),
     );
     // Breathe only while the microphone is actually recording.
-    ref.read(speechServiceProvider).isListening.addListener(_onListeningChanged);
+    _speech.isListening.addListener(_onListeningChanged);
     _listenForResult();
     _autoCheckForUpdate();
   }
@@ -125,7 +127,7 @@ static final RegExp _arabicRegex = RegExp(r'[\u0600-\u06FF]');
   @override
   @override
   void dispose() {
-    ref.read(speechServiceProvider).isListening.removeListener(_onListeningChanged);
+    _speech.isListening.removeListener(_onListeningChanged);
     _micPulseCtrl.dispose();
     _controller.dispose();
     super.dispose();
@@ -251,7 +253,7 @@ static final RegExp _arabicRegex = RegExp(r'[\u0600-\u06FF]');
             child: SafeArea(
               bottom: false,
               child: ValueListenableBuilder<bool>(
-                valueListenable: ref.read(speechServiceProvider).isListening,
+                valueListenable: _speech.isListening,
                 builder: (context, listening, _) => AnimatedSwitcher(
                   duration: const Duration(milliseconds: 250),
                   switchInCurve: Curves.easeOutCubic,
@@ -299,17 +301,22 @@ static final RegExp _arabicRegex = RegExp(r'[\u0600-\u06FF]');
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                username == null || username.isEmpty
-                    ? 'English Core'
-                    : '${headerL10n.homeWelcome}، $username',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 19,
-                      color: palette.text,
-                    ),
+              // Scale down instead of truncating so long usernames stay
+              // fully visible even on narrow screens.
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(
+                  username == null || username.isEmpty
+                      ? 'English Core'
+                      : '${headerL10n.homeWelcome}، $username',
+                  maxLines: 1,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 19,
+                        color: palette.text,
+                      ),
+                ),
               ),
               Text(
                 'MR. THARWAT TAWFIQ',
@@ -424,33 +431,40 @@ ValueListenableBuilder<TextEditingValue>(
             },
           ),
           const SizedBox(height: 10),
+          // Fully elastic: on narrow screens the toggle shrinks and tool
+          // labels ellipsize instead of the row overflowing.
           Row(
             children: [
-              _ToolButton(
-                icon: Icons.content_paste_rounded,
-                label: l10n.inputPaste,
-                onTap: _paste,
-              ),
-              const SizedBox(width: 8),
-              _SpeechLangToggle(
-                value: _speechLang,
-                arabicLabel: l10n.settingsArabic,
-                englishLabel: l10n.settingsEnglish,
-                onChanged: (lang) => setState(() => _speechLang = lang),
-              ),
-              const SizedBox(width: 8),
-              ValueListenableBuilder<bool>(
-                valueListenable: ref.read(speechServiceProvider).isListening,
-                builder: (context, listening, _) => _ToolButton(
-                  icon: listening
-                      ? Icons.mic_rounded
-                      : Icons.mic_none_rounded,
-                  label: l10n.inputMic,
-                  onTap: _speechToText,
-                  active: listening,
+              Flexible(
+                child: _ToolButton(
+                  icon: Icons.content_paste_rounded,
+                  label: l10n.inputPaste,
+                  onTap: _paste,
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _SpeechLangToggle(
+                  value: _speechLang,
+                  arabicLabel: l10n.settingsArabic,
+                  englishLabel: l10n.settingsEnglish,
+                  onChanged: (lang) => setState(() => _speechLang = lang),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: ValueListenableBuilder<bool>(
+                  valueListenable: _speech.isListening,
+                  builder: (context, listening, _) => _ToolButton(
+                    icon: listening
+                        ? Icons.mic_rounded
+                        : Icons.mic_none_rounded,
+                    label: l10n.inputMic,
+                    onTap: _speechToText,
+                    active: listening,
+                  ),
+                ),
+              ),
               ValueListenableBuilder<TextEditingValue>(
                 valueListenable: _controller,
                 builder: (_, value, __) {
@@ -551,12 +565,15 @@ ValueListenableBuilder<TextEditingValue>(
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Text(
-                        label,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
+                      Flexible(
+                        child: Text(
+                          label,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ],
@@ -567,12 +584,17 @@ ValueListenableBuilder<TextEditingValue>(
                       const Icon(Icons.volume_up_rounded,
                           color: Colors.white, size: 24),
                       const SizedBox(width: 10),
-                      Text(
-                        l10n.mainCta,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
+                      Flexible(
+                        child: Text(
+                          l10n.mainCta,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
                     ],
@@ -617,12 +639,17 @@ class _ToolButton extends StatelessWidget {
             children: [
               Icon(icon, size: 18, color: fg),
               const SizedBox(width: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: fg,
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: false,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: fg,
+                  ),
                 ),
               ),
             ],
@@ -685,7 +712,6 @@ class _SpeechLangToggle extends StatelessWidget {
 
     return Container(
       height: 34,
-      width: 108,
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: palette.surfaceAlt,
@@ -727,7 +753,7 @@ class _RecordingBanner extends StatelessWidget {
       animation: Listenable.merge([pulseCtrl, speechLevel]),
       builder: (context, _) {
         final pulse = pulseCtrl.value; // 0..1 breathing wave
-        // Engine level → 0..1 (dB-ish units; ~45 is loud speech).
+        // Engine level ? 0..1 (dB-ish units; ~45 is loud speech).
         final level = ((speechLevel.value / 45).clamp(0.0, 1.0));
         return Material(
           color: Colors.transparent,

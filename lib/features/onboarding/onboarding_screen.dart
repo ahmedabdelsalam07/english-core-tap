@@ -164,9 +164,14 @@ class _GirlImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = AppPalette.of(context);
-    return SizedBox(
-      height: 350,
-      child: Stack(
+    // Scale down as a whole on small screens instead of clipping.
+    return Center(
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: SizedBox(
+          height: 350,
+          width: 252,
+          child: Stack(
         alignment: Alignment.bottomCenter,
         children: [
           // The frame she stands inside.
@@ -202,6 +207,8 @@ class _GirlImage extends StatelessWidget {
             ),
           ),
         ],
+          ),
+        ),
       ),
     );
   }
@@ -279,7 +286,13 @@ class _BrandSlide extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const FullLogo(width: 330),
+        // Never overflow narrow screens — shrink the full logo instead.
+        const Center(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: FullLogo(width: 330),
+          ),
+        ),
         const SizedBox(height: 26),
         Text(
           l10n.onboardingBrandEn,

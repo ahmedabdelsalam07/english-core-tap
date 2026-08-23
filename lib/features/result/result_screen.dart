@@ -178,8 +178,13 @@ class _EnglishSection extends ConsumerWidget {
         children: [
           Row(
             children: [
-              _SectionLabel(icon: Icons.text_fields_rounded, label: l10n.resultEnglish),
-              const Spacer(),
+              Expanded(
+                child: _SectionLabel(
+                  icon: Icons.text_fields_rounded,
+                  label: l10n.resultEnglish,
+                ),
+              ),
+              const SizedBox(width: 8),
               CopyButton(text: result.englishText),
             ],
           ),
@@ -216,12 +221,17 @@ class _SectionLabel extends StatelessWidget {
       children: [
         Icon(icon, size: 18, color: palette.primary),
         const SizedBox(width: 6),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: palette.textSoft,
+        // Ellipsize instead of overflowing on narrow screens.
+        Flexible(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: palette.textSoft,
+            ),
           ),
         ),
       ],
@@ -249,11 +259,13 @@ class _ArabicPhoneticSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              _SectionLabel(
-                icon: Icons.translate_rounded,
-                label: l10n.resultArabicPronunciation,
+              Expanded(
+                child: _SectionLabel(
+                  icon: Icons.translate_rounded,
+                  label: l10n.resultArabicPronunciation,
+                ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               CopyButton(text: result.arabicPhonetic),
             ],
           ),
@@ -298,8 +310,13 @@ class _TranslationSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              _SectionLabel(icon: Icons.g_translate_rounded, label: l10n.resultTranslation),
-              const Spacer(),
+              Expanded(
+                child: _SectionLabel(
+                  icon: Icons.g_translate_rounded,
+                  label: l10n.resultTranslation,
+                ),
+              ),
+              const SizedBox(width: 8),
               CopyButton(text: result.arabicTranslation),
             ],
           ),
@@ -641,28 +658,41 @@ class _CompactWaveformState extends State<_CompactWaveform>
     return AnimatedBuilder(
       animation: _ctrl,
       builder: (context, _) {
+        // Bar count adapts to the available width so the waveform never
+        // overflows on narrow screens.
         return SizedBox(
           height: 32,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: List.generate(_bars, (i) {
-              final h = widget.active
-                  ? _level(i)
-                  : 0.12 + (i % 4 == 0 ? 0.1 : 0.0);
-              final passed = (i + 1) / _bars <= widget.progress;
-              return Container(
-                width: 2.5,
-                height: 32 * h,
-                margin: const EdgeInsets.symmetric(horizontal: 1.2),
-                decoration: BoxDecoration(
-                  color: passed
-                      ? AppColors.primaryOnDark
-                      : Colors.white.withOpacity(0.30),
-                  borderRadius: BorderRadius.circular(3),
-                ),
+          width: double.infinity,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              const double barWidth = 2.5;
+              const double gap = 2.4;
+              final int count = math.max(
+                12,
+                ((constraints.maxWidth + gap) / (barWidth + gap)).floor(),
               );
-            }),
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: List.generate(count, (i) {
+                  final h = widget.active
+                      ? _level(i % _bars)
+                      : 0.12 + (i % 4 == 0 ? 0.1 : 0.0);
+                  final passed = (i + 1) / count <= widget.progress &&
+                      widget.progress > 0;
+                  return Container(
+                    width: barWidth,
+                    height: 32 * h,
+                    decoration: BoxDecoration(
+                      color: passed
+                          ? AppColors.primaryOnDark
+                          : Colors.white.withOpacity(0.30),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  );
+                }),
+              );
+            },
           ),
         );
       },

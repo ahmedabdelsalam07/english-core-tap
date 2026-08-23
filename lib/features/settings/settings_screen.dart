@@ -104,11 +104,16 @@ class SettingsScreen extends ConsumerWidget {
           _SettingsSection(
             title: l10n.settingsArabicPhonetic,
             icon: Icons.translate_rounded,
-            child: SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(l10n.settingsArabicPhoneticOn),
-              value: settings.showArabicPhonetic,
-              onChanged: controller.setShowArabicPhonetic,
+            // Transparent Material so the tile's ink splashes render above
+            // the section card's decorated background.
+            child: Material(
+              type: MaterialType.transparency,
+              child: SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(l10n.settingsArabicPhoneticOn),
+                value: settings.showArabicPhonetic,
+                onChanged: controller.setShowArabicPhonetic,
+              ),
             ),
           ),
           const SizedBox(height: 16),

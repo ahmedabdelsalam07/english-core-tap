@@ -49,8 +49,20 @@ class EnglishCoreTapApp extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       routerConfig: router,
-      builder: (context, child) =>
-          _SessionKickBanner(child: child ?? const SizedBox.shrink()),
+      // Responsive safety net: users who crank up their system font size
+      // would otherwise break layouts everywhere — cap the scale gently.
+      builder: (context, child) {
+        final media = MediaQuery.of(context);
+        return MediaQuery(
+          data: media.copyWith(
+            textScaler: media.textScaler.clamp(
+              minScaleFactor: 1.0,
+              maxScaleFactor: 1.35,
+            ),
+          ),
+          child: _SessionKickBanner(child: child ?? const SizedBox.shrink()),
+        );
+      },
     );
   }
 }
