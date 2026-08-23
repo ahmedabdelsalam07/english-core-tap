@@ -15,11 +15,15 @@ const String authEmailDomain = 'englishcore.app';
 /// Authenticated account (never stores the password).
 class UserAccount {
   final String username;
-  const UserAccount({required this.username});
+  final String uid;
 
-  Map<String, dynamic> toJson() => {'username': username};
-  factory UserAccount.fromJson(Map<String, dynamic> json) =>
-      UserAccount(username: json['username'] as String? ?? '');
+  const UserAccount({required this.username, this.uid = ''});
+
+  Map<String, dynamic> toJson() => {'username': username, 'uid': uid};
+  factory UserAccount.fromJson(Map<String, dynamic> json) => UserAccount(
+        username: json['username'] as String? ?? '',
+        uid: json['uid'] as String? ?? '',
+      );
 }
 
 /// Secure token storage (Keystore / Keychain backed).
@@ -60,7 +64,7 @@ class FirebaseAuthService implements AuthService {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return null;
-      return UserAccount(username: usernameFrom(user));
+      return UserAccount(username: usernameFrom(user), uid: user.uid);
     } catch (_) {
       return null;
     }
@@ -83,7 +87,7 @@ class FirebaseAuthService implements AuthService {
       if (user == null) {
         throw const AppException(AppErrorKind.authInvalid);
       }
-      return UserAccount(username: usernameFrom(user));
+      return UserAccount(username: usernameFrom(user), uid: user.uid);
     } on FirebaseAuthException catch (e) {
       throw mapAuthError(e);
     } on AppException {
@@ -232,7 +236,7 @@ class LocalDevAuthService implements AuthService {
     final token = await _store.readToken();
     if (token == null || token.isEmpty) return null;
     final decoded = utf8.decode(base64.decode(token));
-    return UserAccount(username: decoded);
+    return UserAccount(username: decoded, uid: decoded);
   }
 
   @override
@@ -245,7 +249,7 @@ class LocalDevAuthService implements AuthService {
     }
     final token = base64.encode(utf8.encode(username.trim()));
     await _store.saveToken(token);
-    return UserAccount(username: username.trim());
+    return UserAccount(username: username.trim(), uid: username.trim());
   }
 
   @override
