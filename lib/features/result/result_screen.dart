@@ -416,11 +416,6 @@ class _AudioPlayerWidgetState extends ConsumerState<AudioPlayerWidget>
             await tts.setSpeed(s);
             ref.read(settingsControllerProvider.notifier).setPlaybackSpeed(s);
           },
-          onStop: () async {
-            try {
-              await tts.stop();
-            } catch (_) {}
-          },
         );
       },
     );
@@ -435,7 +430,6 @@ class _VoiceBar extends StatelessWidget {
   final AnimationController dotCtrl;
   final VoidCallback onPlayPause;
   final ValueChanged<double> onSpeedChanged;
-  final VoidCallback onStop;
 
   const _VoiceBar({
     required this.speaking,
@@ -445,7 +439,6 @@ class _VoiceBar extends StatelessWidget {
     required this.dotCtrl,
     required this.onPlayPause,
     required this.onSpeedChanged,
-    required this.onStop,
   });
 
   @override
@@ -458,12 +451,6 @@ class _VoiceBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: onStop,
-            child: const Icon(Icons.delete_outline_rounded,
-                color: AppColors.danger, size: 22),
-          ),
-          const SizedBox(width: 4),
           AnimatedBuilder(
             animation: dotCtrl,
             builder: (context, _) {

@@ -3,7 +3,7 @@
   static const String brand = 'ENGLISH CORE';
   static const String brandSub = 'MR. THARWAT TAWFIQ';
   /// Bump on every release (must match the GitHub release tag, without 'v').
-  static const String appVersion = '1.0.33';
+  static const String appVersion = '1.0.34';
   static const String githubRepo =
       'ahmedabdelsalam07/english-core-tap';
   static const String websiteUrl = 'https://www.quickpronounce.site/';
