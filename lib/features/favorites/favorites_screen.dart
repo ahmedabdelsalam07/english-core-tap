@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -91,16 +91,6 @@ class _FavoriteCard extends ConsumerWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                result.arabicPhonetic,
-                textDirection: TextDirection.rtl,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: palette.secondary,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
                 result.arabicTranslation,
                 textDirection: TextDirection.rtl,
                 style: TextStyle(
@@ -143,8 +133,9 @@ class _FavoriteCard extends ConsumerWidget {
                           height: 34,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color:
-                                active ? AppColors.danger : AppColors.success,
+                            color: active
+                                ? AppColors.danger
+                                : AppColors.success,
                           ),
                           child: Icon(
                             active
