@@ -33,7 +33,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   // Cached in initState so dispose() never touches "ref" after unmount.
   late final SpeechService _speech = ref.read(speechServiceProvider);
   late final AnimationController _micPulseCtrl;
-  SpeechLang _speechLang = SpeechLang.english;
 
   @override
   void initState() {
@@ -58,7 +57,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     }
   }
 
-static final RegExp _arabicRegex = RegExp(r'[\u0600-\u06FF]');
+  static final RegExp _arabicRegex = RegExp(r'[\u0600-\u06FF]');
 
   /// Tags already offered this session. Guards against an endless
   /// prompt-reload-prompt loop if the running build's version constant ever
@@ -125,7 +124,6 @@ static final RegExp _arabicRegex = RegExp(r'[\u0600-\u06FF]');
   }
 
   @override
-  @override
   void dispose() {
     _speech.isListening.removeListener(_onListeningChanged);
     _micPulseCtrl.dispose();
@@ -176,7 +174,13 @@ static final RegExp _arabicRegex = RegExp(r'[\u0600-\u06FF]');
       );
       return;
     }
-    final result = await speech.listen(lang: _speechLang);
+    // The dictation language follows the text already in the box, exactly as
+    // the search field does: Arabic script -> Arabic, anything else -> English.
+    // This replaces the removed AR/EN toggle without losing the behaviour.
+    final lang = _arabicRegex.hasMatch(_controller.text)
+        ? SpeechLang.arabic
+        : SpeechLang.english;
+    final result = await speech.listen(lang: lang);
     if (result != null && result.isNotEmpty) {
       _controller.text = result;
       await speech.stop();
@@ -392,7 +396,7 @@ static final RegExp _arabicRegex = RegExp(r'[\u0600-\u06FF]');
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-ValueListenableBuilder<TextEditingValue>(
+          ValueListenableBuilder<TextEditingValue>(
             valueListenable: _controller,
             builder: (_, value, __) {
               final isArabic = _arabicRegex.hasMatch(value.text);
@@ -406,7 +410,8 @@ ValueListenableBuilder<TextEditingValue>(
                     textInputAction: TextInputAction.search,
                     onSubmitted: (_) => _process(),
                     style: TextStyle(fontSize: 18, color: palette.text),
-                    textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+                    textDirection:
+                        isArabic ? TextDirection.rtl : TextDirection.ltr,
                     decoration: InputDecoration(
                       hintText: l10n.inputPlaceholder,
                       hintStyle: TextStyle(color: palette.textSoft),
@@ -431,7 +436,7 @@ ValueListenableBuilder<TextEditingValue>(
             },
           ),
           const SizedBox(height: 10),
-          // Fully elastic: on narrow screens the toggle shrinks and tool
+          // Fully elastic: on narrow screens the tool buttons shrink and their
           // labels ellipsize instead of the row overflowing.
           Row(
             children: [
@@ -440,15 +445,6 @@ ValueListenableBuilder<TextEditingValue>(
                   icon: Icons.content_paste_rounded,
                   label: l10n.inputPaste,
                   onTap: _paste,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _SpeechLangToggle(
-                  value: _speechLang,
-                  arabicLabel: l10n.settingsArabic,
-                  englishLabel: l10n.settingsEnglish,
-                  onChanged: (lang) => setState(() => _speechLang = lang),
                 ),
               ),
               const SizedBox(width: 8),
@@ -465,6 +461,7 @@ ValueListenableBuilder<TextEditingValue>(
                   ),
                 ),
               ),
+              const Spacer(),
               ValueListenableBuilder<TextEditingValue>(
                 valueListenable: _controller,
                 builder: (_, value, __) {
@@ -604,7 +601,6 @@ ValueListenableBuilder<TextEditingValue>(
       ),
     );
   }
-
 }
 
 class _ToolButton extends StatelessWidget {
@@ -655,74 +651,6 @@ class _ToolButton extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Compact AR/EN segmented control that picks the dictation language for
-/// the next speech session (recognition engines take one locale at a time).
-class _SpeechLangToggle extends StatelessWidget {
-  final SpeechLang value;
-  final String arabicLabel;
-  final String englishLabel;
-  final ValueChanged<SpeechLang> onChanged;
-
-  const _SpeechLangToggle({
-    required this.value,
-    required this.arabicLabel,
-    required this.englishLabel,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = AppPalette.of(context);
-    Widget seg(SpeechLang lang, String label) {
-      final selected = value == lang;
-      return Expanded(
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => onChanged(lang),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            decoration: BoxDecoration(
-              color: selected
-                  ? palette.primary.withOpacity(0.20)
-                  : Colors.transparent,
-              borderRadius: AppRadius.pill,
-            ),
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                color:
-                    selected ? palette.primary : palette.textSoft,
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      height: 34,
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: palette.surfaceAlt,
-        borderRadius: AppRadius.pill,
-        border: Border.all(color: palette.textSoft.withOpacity(0.15)),
-      ),
-      child: Row(
-        children: [
-          seg(SpeechLang.arabic, arabicLabel),
-          seg(SpeechLang.english, englishLabel),
-        ],
       ),
     );
   }
@@ -795,8 +723,7 @@ class _RecordingBanner extends StatelessWidget {
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color:
-                              AppColors.primaryOnDark.withOpacity(0.16),
+                          color: AppColors.primaryOnDark.withOpacity(0.16),
                         ),
                         child: const Icon(
                           Icons.mic_rounded,
@@ -912,8 +839,7 @@ class _RecentHistory extends ConsumerWidget {
       children: [
         Row(
           children: [
-            Icon(Icons.history_rounded,
-                size: 18, color: palette.textSoft),
+            Icon(Icons.history_rounded, size: 18, color: palette.textSoft),
             const SizedBox(width: 6),
             Text(
               l10n.recentHistory,
@@ -936,8 +862,8 @@ class _RecentHistory extends ConsumerWidget {
                 borderRadius: AppRadius.md,
                 onTap: () => onTap(e.englishText),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   child: Row(
                     children: [
                       Icon(Icons.volume_up_outlined,
