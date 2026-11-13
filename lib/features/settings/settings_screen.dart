@@ -102,22 +102,6 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           _SettingsSection(
-            title: l10n.settingsArabicPhonetic,
-            icon: Icons.translate_rounded,
-            // Transparent Material so the tile's ink splashes render above
-            // the section card's decorated background.
-            child: Material(
-              type: MaterialType.transparency,
-              child: SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(l10n.settingsArabicPhoneticOn),
-                value: settings.showArabicPhonetic,
-                onChanged: controller.setShowArabicPhonetic,
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          _SettingsSection(
             title: l10n.settingsLanguage,
             icon: Icons.language_rounded,
             child: SegmentedButton<AppLocale>(
@@ -126,7 +110,7 @@ class SettingsScreen extends ConsumerWidget {
                   value: AppLocale.ar,
                   label: Text(l10n.settingsArabic),
                 ),
-const ButtonSegment(
+                const ButtonSegment(
                   value: AppLocale.en,
                   label: Text('English'),
                 ),
