@@ -7,9 +7,10 @@ import 'api_config.dart';
 
 /// American English text-to-speech service.
 ///
-/// Provider-based (flutter_tts) and accent-aware (en-US). Uses the device's
-/// default engine voice and supports play / pause / resume / stop / replay
-/// and speed control.
+/// Provider-based (flutter_tts) and accent-aware (en-US). One preferred en-US
+/// voice is resolved from the engine and re-applied before every utterance so
+/// a word never plays in a different voice than the last one. Supports play /
+/// pause / resume / stop / replay and speed control.
 class TtsService {
   final FlutterTts _tts = FlutterTts();
 
@@ -17,8 +18,28 @@ class TtsService {
   final ValueNotifier<bool> isPaused = ValueNotifier<bool>(false);
   final ValueNotifier<double> progress = ValueNotifier<double>(0);
 
+  /// Preferred voices, best first. Matching is a case-insensitive substring
+  /// test on the engine's voice names, so engines that expose different names
+  /// fall through to the next candidate instead of failing.
+  static const List<String> _preferredVoices = <String>[
+    'Google US English',
+    'Google US',
+    'Microsoft Aria',
+    'Microsoft Guy',
+    'Microsoft Zira',
+    'Microsoft David',
+    'Samantha',
+    'Alex',
+    'Ava',
+    'Allison',
+    'Daniel',
+  ];
+
   String _currentText = '';
   double _currentSpeed = 1.0;
+  String? _voiceName;
+  String? _voiceLocale;
+
   bool get _isPauseSupported =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
   Timer? _progressTimer;
@@ -48,6 +69,76 @@ class TtsService {
     try {
       await _tts.setLanguage('en-US');
       await _tts.setPitch(1.0);
+    } catch (_) {}
+    await _selectVoice();
+  }
+
+  /// Resolves and pins ONE English voice for the whole session.
+  ///
+  /// Engines expose very different voice lists (Chrome, Android TTS, Windows
+  /// SAPI, iOS AVSpeech); without an explicit choice each utterance can be
+  /// spoken by a different default voice. The resolved voice is stored and
+  /// re-applied in [speak] because some engines reset it on cancel.
+  Future<void> _selectVoice() async {
+    try {
+      final raw = await _tts.getVoices;
+      final voices = <Map<String, String>>[];
+      if (raw is List) {
+        for (final entry in raw) {
+          if (entry is! Map) continue;
+          final name = (entry['name'] ?? entry['identifier'] ?? '').toString();
+          final locale =
+              (entry['locale'] ?? entry['language'] ?? '').toString();
+          if (name.isEmpty) continue;
+          voices.add(<String, String>{'name': name, 'locale': locale});
+        }
+      }
+      if (voices.isEmpty) return;
+
+      List<Map<String, String>> candidates = voices
+          .where((v) => v['locale']!
+              .toLowerCase()
+              .replaceAll('-', '_')
+              .startsWith('en_us'))
+          .toList();
+      if (candidates.isEmpty) {
+        candidates = voices
+            .where((v) => v['locale']!.toLowerCase().startsWith('en'))
+            .toList();
+      }
+      if (candidates.isEmpty) return;
+
+      Map<String, String>? chosen;
+      for (final hint in _preferredVoices) {
+        final matches = candidates
+            .where((v) => v['name']!.toLowerCase().contains(hint.toLowerCase()))
+            .toList();
+        if (matches.isNotEmpty) {
+          chosen = matches.first;
+          break;
+        }
+      }
+      chosen ??= candidates.first;
+
+      await _tts.setVoice(
+        <String, String>{'name': chosen['name']!, 'locale': chosen['locale']!},
+      );
+      _voiceName = chosen['name'];
+      _voiceLocale = chosen['locale'];
+    } catch (_) {
+      // No voice list available: keep the engine default.
+    }
+  }
+
+  /// Re-applies the pinned voice; silent when none could be resolved.
+  Future<void> _applyVoice() async {
+    final name = _voiceName;
+    if (name == null) return;
+    try {
+      await _tts.setVoice(<String, String>{
+        'name': name,
+        'locale': _voiceLocale ?? 'en-US',
+      });
     } catch (_) {}
   }
 
@@ -85,6 +176,7 @@ class TtsService {
     }
     try {
       await _tts.setLanguage('en-US');
+      await _applyVoice();
       await _applyRate();
       isPaused.value = false;
       isSpeaking.value = true;
