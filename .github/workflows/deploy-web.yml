@@ -39,10 +39,15 @@ jobs:
       - name: Build web
         run: flutter build web --release --base-href /english-core-tap/ --pwa-strategy=none
 
+      # The APK is only a convenience mirror of the Android release hosted next
+      # to the web build. Its toolchain (Gradle/AGP) can break independently of
+      # the web build, so it must never block publishing the web app.
       - name: Build APK (mirror for fast regional download)
+        continue-on-error: true
         run: flutter build apk --release
 
       - name: Copy APK into web bundle
+        if: hashFiles('build/app/outputs/flutter-apk/app-release.apk') != ''
         run: cp build/app/outputs/flutter-apk/app-release.apk build/web/english-core-tap.apk
 
       - name: Copy privacy policy page
