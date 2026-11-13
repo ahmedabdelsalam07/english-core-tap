@@ -36,7 +36,6 @@ class HomeState {
 
 class HomeController extends StateNotifier<HomeState> {
   HomeController(this.ref) : super(const HomeState());
-
   final Ref ref;
 
   static final RegExp _arabicRegex = RegExp(r'[\u0600-\u06FF]');
@@ -62,7 +61,7 @@ class HomeController extends StateNotifier<HomeState> {
 
       if (isArabic) {
         // Arabic → English: translate first, then build the pronunciation
-        // flow around the English result so audio/phonetic still work.
+        // flow around the English result so audio still works.
         state = const HomeState(phase: HomePhase.translating);
         final translation = await translationFuture;
         englishText = translation.translatedText.trim();
@@ -71,7 +70,8 @@ class HomeController extends StateNotifier<HomeState> {
         }
         arabicText = trimmed;
         state = const HomeState(phase: HomePhase.analyzing);
-        wordResults = await ref.read(dictionaryServiceProvider).transcribe(englishText);
+        wordResults =
+            await ref.read(dictionaryServiceProvider).transcribe(englishText);
       } else {
         // English → Arabic: analyze words first, translation already running.
         englishText = trimmed;
@@ -79,23 +79,6 @@ class HomeController extends StateNotifier<HomeState> {
         wordResults = await ref.read(dictionaryServiceProvider).transcribe(trimmed);
         await translationFuture;
       }
-
-      // Per-word IPA hints keyed by the lower-cased word so alignment never
-      // breaks when punctuation/numbers are skipped during transcription.
-      final ipaHints = <String, String>{};
-      for (final w in wordResults) {
-        final key = w.word.toLowerCase().replaceAll(RegExp("[^a-z'-]"), '');
-        final ipa = w.ipa?.replaceAll('/', '').trim() ?? '';
-        if (key.isNotEmpty && ipa.isNotEmpty) {
-          ipaHints[key] = ipa;
-        }
-      }
-
-      // Prepare pronunciation (fast, sync) while translation runs
-      state = const HomeState(phase: HomePhase.preparing);
-      final phoneticService = ref.read(arabicPhoneticServiceProvider);
-      final phonetic =
-          phoneticService.toArabicPhonetic(englishText, ipaHints: ipaHints);
 
       state = const HomeState(phase: HomePhase.translating);
       await Future<void>.delayed(const Duration(milliseconds: 200));
@@ -109,7 +92,9 @@ class HomeController extends StateNotifier<HomeState> {
       final result = PronunciationResult(
         englishText: englishText,
         arabicTranslation: arabicTranslation,
-        arabicPhonetic: phonetic,
+        // Arabic phonetic transcription was removed from the product; the
+        // Arabic translation above is what we keep.
+        arabicPhonetic: '',
         accent: 'en-US',
         speed: speed,
         createdAt: DateTime.now(),
@@ -121,7 +106,7 @@ class HomeController extends StateNotifier<HomeState> {
             HistoryEntry(
               englishText: englishText,
               arabicTranslation: arabicTranslation,
-              arabicPhonetic: phonetic,
+              arabicPhonetic: '',
               timestamp: DateTime.now(),
             ),
           );
