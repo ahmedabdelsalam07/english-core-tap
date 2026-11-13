@@ -1,3 +1,5 @@
+import 'word_meaning.dart';
+
 /// Unified pronunciation result model.
 class PronunciationResult {
   final String englishText;
@@ -7,6 +9,10 @@ class PronunciationResult {
   final double speed;
   final DateTime createdAt;
   final String? nativeAudioUrl;
+
+  /// Meanings and synonyms of the English word/sentence, primary sense first.
+  final List<WordMeaning> meanings;
+
   bool favorite;
 
   PronunciationResult({
@@ -17,6 +23,7 @@ class PronunciationResult {
     required this.speed,
     required this.createdAt,
     this.nativeAudioUrl,
+    this.meanings = const <WordMeaning>[],
     this.favorite = false,
   });
 
@@ -28,6 +35,7 @@ class PronunciationResult {
     double? speed,
     DateTime? createdAt,
     String? nativeAudioUrl,
+    List<WordMeaning>? meanings,
     bool? favorite,
   }) {
     return PronunciationResult(
@@ -38,6 +46,7 @@ class PronunciationResult {
       speed: speed ?? this.speed,
       createdAt: createdAt ?? this.createdAt,
       nativeAudioUrl: nativeAudioUrl ?? this.nativeAudioUrl,
+      meanings: meanings ?? this.meanings,
       favorite: favorite ?? this.favorite,
     );
   }
@@ -51,6 +60,7 @@ class PronunciationResult {
         'createdAt': createdAt.toIso8601String(),
         'favorite': favorite,
         'nativeAudioUrl': nativeAudioUrl,
+        'meanings': meanings.map((m) => m.toJson()).toList(),
       };
 
   factory PronunciationResult.fromJson(Map<String, dynamic> json) {
@@ -61,8 +71,14 @@ class PronunciationResult {
       accent: json['accent'] as String? ?? 'en-US',
       speed: (json['speed'] as num?)?.toDouble() ?? 1.0,
       createdAt:
-          DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+              DateTime.now(),
       nativeAudioUrl: json['nativeAudioUrl'] as String?,
+      // Older saved entries simply have no meanings and keep working.
+      meanings: (json['meanings'] as List<dynamic>? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(WordMeaning.fromStorage)
+          .toList(),
       favorite: json['favorite'] as bool? ?? false,
     );
   }
