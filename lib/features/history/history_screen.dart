@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -203,20 +203,6 @@ class _HistoryTile extends ConsumerWidget {
                         color: palette.text,
                       ),
                     ),
-                    if ((entry.arabicPhonetic ?? '').isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        entry.arabicPhonetic!,
-                        textDirection: TextDirection.rtl,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: palette.secondary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
                     const SizedBox(height: 2),
                     Text(
                       _relative(entry.timestamp),
