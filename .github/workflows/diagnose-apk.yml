@@ -1,0 +1,58 @@
+name: Diagnose APK build
+
+on:
+  push:
+    branches: [diag/apk]
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Report toolchain versions
+        run: |
+          flutter --version
+          java -version
+          echo "---- local.properties ----"
+          cat android/local.properties 2>/dev/null || echo "no local.properties"
+          echo "---- flutter android defaults ----"
+          grep -R "compileSdkVersion\|minSdkVersion\|ndkVersion" packages/flutter_tools/gradle 2>/dev/null | head -n 20 || true
+
+      - name: Build APK
+        id: apk
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          flutter build apk --release 2>&1 | tee /tmp/apk.log | tail -n 40
+          exit ${PIPESTATUS[0]}
+
+      - name: Annotate the failure tail
+        if: always()
+        shell: bash
+        run: |
+          echo "::error title=apk-outcome::apk step outcome was ${{ steps.apk.outcome }}"
+          if [ -f /tmp/apk.log ]; then
+            echo "::error title=apk-lines::$(wc -l < /tmp/apk.log) lines captured"
+            grep -n -i -E "what went wrong|error|failed|caused by|exception|ndk|kotlin|jvm target|ndkVersion|requires|unsupported" /tmp/apk.log \
+              | tail -n 8 \
+              | cut -c1-900 \
+              | while IFS= read -r line; do echo "::error title=apk::$line"; done
+          else
+            echo "::error title=apk::no build log captured"
+          fi
