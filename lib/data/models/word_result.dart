@@ -1,14 +1,21 @@
+import 'word_meaning.dart';
+
 class WordResult {
   final String word;
   final String? ipa;
   final String? audioUrl;
   final String? definition;
 
+  /// Every sense group returned by the dictionary API. The first one is the
+  /// primary meaning; the rest add the other contexts and their synonyms.
+  final List<WordMeaning> meanings;
+
   const WordResult({
     required this.word,
     this.ipa,
     this.audioUrl,
     this.definition,
+    this.meanings = const <WordMeaning>[],
   });
 
   factory WordResult.fromJson(Map<String, dynamic> json) {
@@ -42,9 +49,15 @@ class WordResult {
       }
     }
 
+    final rawMeanings = json['meanings'] as List<dynamic>? ?? const [];
+    final meanings = rawMeanings
+        .whereType<Map<String, dynamic>>()
+        .map(WordMeaning.fromJson)
+        .where((m) => m.partOfSpeech.isNotEmpty && !m.isEmpty)
+        .toList();
+
     String? definition;
-    final meanings = json['meanings'] as List<dynamic>? ?? const [];
-    for (final meaning in meanings.whereType<Map<String, dynamic>>()) {
+    for (final meaning in rawMeanings.whereType<Map<String, dynamic>>()) {
       final definitions = meaning['definitions'] as List<dynamic>? ?? const [];
       for (final d in definitions.whereType<Map<String, dynamic>>()) {
         final value = d['definition'] as String?;
@@ -61,6 +74,7 @@ class WordResult {
       ipa: ipa,
       audioUrl: audioUrl,
       definition: definition,
+      meanings: meanings,
     );
   }
 }
