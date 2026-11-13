@@ -8,6 +8,7 @@ import '../../core/enums.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../data/models/pronunciation_result.dart';
+import '../../data/models/word_meaning.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -22,13 +23,25 @@ class ResultScreen extends ConsumerStatefulWidget {
   ConsumerState<ResultScreen> createState() => _ResultScreenState();
 }
 
-class _ResultScreenState extends ConsumerState<ResultScreen> {
+class _ResultScreenState extends ConsumerState<ResultScreen>
+    with SingleTickerProviderStateMixin {
   late PronunciationResult _result;
+  late final AnimationController _heartCtrl;
 
   @override
   void initState() {
     super.initState();
     _result = widget.result;
+    _heartCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 550),
+    );
+  }
+
+  @override
+  void dispose() {
+    _heartCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _share() async {
@@ -37,9 +50,6 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
       ..writeln('${l10n.resultEnglish}:')
       ..writeln(_result.englishText)
       ..writeln()
-      ..writeln('${l10n.resultArabicPronunciation}:')
-      ..writeln(_result.arabicPhonetic)
-      ..writeln()
       ..writeln('${l10n.resultTranslation}:')
       ..writeln(_result.arabicTranslation)
       ..writeln()
@@ -47,16 +57,68 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
     await Share.share(text.toString(), subject: 'ENGLISH CORE');
   }
 
+  /// Same favourite behaviour as before — only the feedback changed: the heart
+  /// pops immediately, then a themed popup confirms what was saved.
+  Future<void> _toggleFavorite(AppLocalizations l10n) async {
+    _heartCtrl.forward(from: 0);
+    final controller = ref.read(favoritesControllerProvider.notifier);
+    await controller.toggle(_result);
+    final nowFav = controller.isFavorite(_result.englishText);
+    if (!mounted) return;
+    setState(() => _result = _result.copyWith(favorite: nowFav));
+    _showFavoritePopup(
+      nowFav ? l10n.resultFavoriteAdd : l10n.resultFavoriteRemove,
+      nowFav,
+    );
+  }
+
+  /// Floating confirmation popup, styled with the app's dark surface pills so
+  /// it reads as part of the design system rather than a system toast.
+  void _showFavoritePopup(String message, bool saved) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.darkSurface,
+          elevation: 6,
+          margin: const EdgeInsets.fromLTRB(20, 0, 20, 18),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          duration: const Duration(seconds: 2),
+          content: Row(
+            children: [
+              Icon(
+                saved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                color: AppColors.danger,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  message,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final settings = ref.watch(settingsControllerProvider);
     final favorites = ref.watch(favoritesControllerProvider);
     final isFavorite = favorites.any(
       (e) => e.result.englishText == _result.englishText,
     );
-    final showPhonetic =
-        settings.showArabicPhonetic && _result.arabicPhonetic.isNotEmpty;
 
     return Scaffold(
       body: SafeArea(
@@ -71,11 +133,11 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                   children: [
                     _EnglishSection(result: _result),
                     const SizedBox(height: 16),
-                    if (showPhonetic) ...[
-                      _ArabicPhoneticSection(result: _result),
-                      const SizedBox(height: 16),
-                    ],
                     _TranslationSection(result: _result),
+                    if (_result.meanings.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      _MeaningsSection(meanings: _result.meanings),
+                    ],
                   ],
                 ),
               ),
@@ -111,42 +173,51 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
           ),
           // HEART — favorite toggle, clearly visible in light & dark.
           IconButton(
-            onPressed: () async {
-              final controller = ref.read(favoritesControllerProvider.notifier);
-              await controller.toggle(_result);
-              final nowFav = controller.isFavorite(_result.englishText);
-              setState(() => _result = _result.copyWith(favorite: nowFav));
-              if (mounted) {
-                ScaffoldMessenger.of(context)
-                  ..hideCurrentSnackBar()
-                  ..showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        nowFav
-                            ? l10n.resultFavoriteAdd
-                            : l10n.resultFavoriteRemove,
-                      ),
-                      duration: const Duration(seconds: 1),
-                    ),
-                  );
-              }
-            },
+            onPressed: () => _toggleFavorite(l10n),
             tooltip: l10n.resultAddFavorite,
-            icon: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
-              transitionBuilder: (child, anim) =>
-                  ScaleTransition(scale: anim, child: child),
-              child: Icon(
-                isFavorite
-                    ? Icons.favorite_rounded
-                    : Icons.favorite_border_rounded,
-                key: ValueKey(isFavorite),
-                size: 26,
-                color: isFavorite ? AppColors.danger : AppColors.danger,
-              ),
+            icon: _HeartGlyph(
+              animation: _heartCtrl,
+              isFavorite: isFavorite,
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Heart icon that pops and wobbles briefly when tapped, then settles back.
+class _HeartGlyph extends StatelessWidget {
+  final Animation<double> animation;
+  final bool isFavorite;
+
+  const _HeartGlyph({required this.animation, required this.isFavorite});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        final t = animation.value.clamp(0.0, 1.0);
+        // One smooth pop: 1.0 -> ~1.45 -> 1.0 across the timeline.
+        final scale = 1.0 + 0.45 * math.sin(math.pi * t) * (1 - 0.45 * t);
+        // A quick decaying wobble makes the motion read as a heartbeat.
+        final angle = 0.16 * math.sin(4 * math.pi * t) * (1 - t);
+        return Transform.rotate(
+          angle: angle,
+          child: Transform.scale(scale: scale, child: child),
+        );
+      },
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        transitionBuilder: (child, anim) =>
+            ScaleTransition(scale: anim, child: child),
+        child: Icon(
+          isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+          key: ValueKey(isFavorite),
+          size: 26,
+          color: AppColors.danger,
+        ),
       ),
     );
   }
@@ -156,7 +227,7 @@ class _EnglishSection extends ConsumerWidget {
   final PronunciationResult result;
   const _EnglishSection({required this.result});
 
-@override
+  @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final settings = ref.watch(settingsControllerProvider);
@@ -239,52 +310,6 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-class _ArabicPhoneticSection extends StatelessWidget {
-  final PronunciationResult result;
-  const _ArabicPhoneticSection({required this.result});
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final palette = AppPalette.of(context);
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: palette.softGradient,
-        borderRadius: AppRadius.lg,
-        border: Border.all(color: palette.primary.withOpacity(0.25)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: _SectionLabel(
-                  icon: Icons.translate_rounded,
-                  label: l10n.resultArabicPronunciation,
-                ),
-              ),
-              const SizedBox(width: 8),
-              CopyButton(text: result.arabicPhonetic),
-            ],
-          ),
-          const SizedBox(height: 10),
-          SelectableText(
-            result.arabicPhonetic,
-            textDirection: TextDirection.rtl,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: palette.secondary,
-                  height: 1.5,
-                ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _TranslationSection extends StatelessWidget {
   final PronunciationResult result;
   const _TranslationSection({required this.result});
@@ -332,6 +357,146 @@ class _TranslationSection extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Meanings and synonyms of the translated word, grouped by part of speech so
+/// several contexts stay readable.
+class _MeaningsSection extends StatelessWidget {
+  final List<WordMeaning> meanings;
+  const _MeaningsSection({required this.meanings});
+
+  @override
+  Widget build(BuildContext context) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: AppRadius.lg,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionLabel(
+            icon: Icons.menu_book_rounded,
+            label: isArabic ? 'المعاني والمرادفات' : 'Meanings & synonyms',
+          ),
+          const SizedBox(height: 12),
+          for (var i = 0; i < meanings.length; i++) ...[
+            if (i > 0) const SizedBox(height: 14),
+            _MeaningGroup(meaning: meanings[i], isPrimary: i == 0),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _MeaningGroup extends StatelessWidget {
+  final WordMeaning meaning;
+  final bool isPrimary;
+  const _MeaningGroup({required this.meaning, required this.isPrimary});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: palette.primary.withOpacity(0.12),
+                borderRadius: AppRadius.pill,
+              ),
+              child: Text(
+                meaning.partOfSpeech,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: palette.primary,
+                ),
+              ),
+            ),
+            if (isPrimary) ...[
+              const SizedBox(width: 8),
+              Text(
+                isArabic ? 'المعنى الأساسي' : 'primary',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: palette.textSoft,
+                ),
+              ),
+            ],
+          ],
+        ),
+        for (final d in meaning.definitions) ...[
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '•  ',
+                style: TextStyle(color: palette.textSoft, fontSize: 13),
+              ),
+              Expanded(
+                child: Text(
+                  d,
+                  textDirection: TextDirection.ltr,
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.5,
+                    color: palette.text,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+        if (meaning.synonyms.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final s in meaning.synonyms)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: palette.surfaceAlt,
+                    borderRadius: AppRadius.pill,
+                    border: Border.all(
+                      color: palette.textSoft.withOpacity(0.18),
+                    ),
+                  ),
+                  child: Text(
+                    s,
+                    textDirection: TextDirection.ltr,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: palette.secondary,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ],
     );
   }
 }
@@ -568,8 +733,7 @@ class _VoiceBar extends StatelessWidget {
                         onSpeedChanged(s);
                       },
                       labelStyle: TextStyle(
-                        color:
-                            s == speed ? Colors.white : palette.primary,
+                        color: s == speed ? Colors.white : palette.primary,
                         fontWeight: FontWeight.w700,
                       ),
                       selectedColor: AppColors.primary,
@@ -686,4 +850,3 @@ class _CompactWaveformState extends State<_CompactWaveform>
     );
   }
 }
-
