@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -9,6 +9,7 @@ import 'l10n/app_localizations.dart';
 import 'providers/auth_provider.dart';
 import 'providers/settings_provider.dart';
 import 'routing/app_router.dart';
+import 'widgets/build_stamp.dart';
 
 class EnglishCoreTapApp extends ConsumerWidget {
   const EnglishCoreTapApp({super.key});
@@ -50,7 +51,7 @@ class EnglishCoreTapApp extends ConsumerWidget {
       ],
       routerConfig: router,
       // Responsive safety net: users who crank up their system font size
-      // would otherwise break layouts everywhere — cap the scale gently.
+      // would otherwise break layouts everywhere - cap the scale gently.
       builder: (context, child) {
         final media = MediaQuery.of(context);
         return MediaQuery(
@@ -60,7 +61,9 @@ class EnglishCoreTapApp extends ConsumerWidget {
               maxScaleFactor: 1.35,
             ),
           ),
-          child: _SessionKickBanner(child: child ?? const SizedBox.shrink()),
+          child: BuildStamp(
+            child: _SessionKickBanner(child: child ?? const SizedBox.shrink()),
+          ),
         );
       },
     );

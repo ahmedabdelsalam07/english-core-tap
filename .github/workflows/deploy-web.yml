@@ -37,17 +37,22 @@ jobs:
         run: flutter pub get
 
       - name: Build web
-        run: flutter build web --release --base-href /english-core-tap/ --pwa-strategy=none
+        run: |
+          SHORT_SHA=$(git rev-parse --short=7 HEAD)
+          BUILD_TIME=$(date -u '+%Y-%m-%d %H:%M UTC')
+          echo "Building web from ${SHORT_SHA} at ${BUILD_TIME}"
+          flutter build web --release \
+            --base-href /english-core-tap/ \
+            --pwa-strategy=none \
+            --dart-define=BUILD_SHA="${SHORT_SHA}" \
+            --dart-define=BUILD_TIME="${BUILD_TIME}"
+          printf '{"sha":"%s","built_at":"%s","ref":"%s"}\n' \
+            "${SHORT_SHA}" "${BUILD_TIME}" "${GITHUB_REF_NAME}" > build/web/build-info.json
 
-      # The APK is only a convenience mirror of the Android release hosted next
-      # to the web build. Its toolchain (Gradle/AGP) can break independently of
-      # the web build, so it must never block publishing the web app.
       - name: Build APK (mirror for fast regional download)
-        continue-on-error: true
         run: flutter build apk --release
 
       - name: Copy APK into web bundle
-        if: hashFiles('build/app/outputs/flutter-apk/app-release.apk') != ''
         run: cp build/app/outputs/flutter-apk/app-release.apk build/web/english-core-tap.apk
 
       - name: Copy privacy policy page
