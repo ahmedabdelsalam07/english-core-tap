@@ -1,0 +1,63 @@
+name: Verify branch
+
+# Temporary verification workflow for the client-requests branch.
+# It never deploys anything: it only analyzes and compiles so a change can be
+# checked without touching main. Delete before merging.
+
+on:
+  push:
+    branches: [feature/client-requests-2]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        continue-on-error: true
+        run: |
+          flutter analyze > analyze.log 2>&1
+          echo "flutter analyze exit: $?"
+          tail -n 40 analyze.log
+
+      - name: Build web
+        continue-on-error: true
+        run: |
+          flutter build web --release --base-href /english-core-tap/ --pwa-strategy=none > web.log 2>&1
+          echo "flutter build web exit: $?"
+          tail -n 40 web.log
+
+      - name: Annotate the tails
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import pathlib, urllib.parse
+          for label, path in (('analyze', 'analyze.log'), ('web', 'web.log')):
+              p = pathlib.Path(path)
+              if not p.exists():
+                  print(f'::error title={label}::log missing')
+                  continue
+              tail = p.read_text(errors='replace')[-2500:]
+              print(f'::error title={label}-tail::' + urllib.parse.quote(tail, safe=''))
+          PY

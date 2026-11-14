@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
+import 'celebration_popup.dart';
 
 /// Natural width/height ratio of the transparent logo asset
 /// (assets/logo/logo_transparent.png = 1400x718).
@@ -78,21 +79,36 @@ class FullLogo extends StatelessWidget {
 /// LOGO ONLY — the transparent brand symbol without any name/number text.
 /// [size] is the rendered HEIGHT; width follows the natural asset ratio.
 /// Used in the header, splash screen and anywhere "logo only" is required.
+///
+/// Tapping the mark reveals the teacher's hidden message; the header places
+/// it at the leading edge, which is the top-right corner in this RTL app.
 class LogoMark extends StatelessWidget {
   final double size;
   const LogoMark({super.key, this.size = 48});
 
+  /// Arabic-only by design: the brand voice message is fixed text.
+  static const String loveMessage = 'مستر ثروت يحبك🤍';
+
   @override
   Widget build(BuildContext context) {
-    return Image.asset(
-      'assets/logo/logo_transparent.png',
-      height: size,
-      width: size * kLogoAspectRatio,
-      fit: BoxFit.contain,
-      errorBuilder: (_, __, ___) => Icon(
-        Icons.record_voice_over_rounded,
-        size: size * 0.7,
-        color: AppColors.primary,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => CelebrationPopup.show(
+        context,
+        message: loveMessage,
+        icon: Icons.emoji_emotions_rounded,
+        accent: AppColors.primary,
+      ),
+      child: Image.asset(
+        'assets/logo/logo_transparent.png',
+        height: size,
+        width: size * kLogoAspectRatio,
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) => Icon(
+          Icons.record_voice_over_rounded,
+          size: size * 0.7,
+          color: AppColors.primary,
+        ),
       ),
     );
   }
