@@ -26,8 +26,12 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>English Core TaP uses the camera to photograph text so it can be read and translated.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>English Core TaP uses the microphone to convert your speech into English text for pronunciation practice.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>English Core TaP lets you choose a photo so the text in it can be read and translated.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>English Core TaP uses speech recognition to convert your spoken English into text.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
