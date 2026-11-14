@@ -8,6 +8,7 @@ import '../../core/enums.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../data/models/pronunciation_result.dart';
+import '../../data/models/word_meaning.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -124,6 +125,13 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
                       const SizedBox(height: 16),
                     ],
                     _entranceWrap(2, _TranslationSection(result: _result)),
+                    if (_result.meanings.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      _entranceWrap(
+                        3,
+                        _MeaningsSection(meanings: _result.meanings),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -160,7 +168,8 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
           // HEART — favourite toggle plus the six-tap hidden message.
           IconButton(
             onPressed: () async {
-              final controller = ref.read(favoritesControllerProvider.notifier);
+              final controller =
+                  ref.read(favoritesControllerProvider.notifier);
               await controller.toggle(_result);
               final nowFav = controller.isFavorite(_result.englishText);
               setState(() => _result = _result.copyWith(favorite: nowFav));
@@ -391,6 +400,146 @@ class _TranslationSection extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Meanings and synonyms of the translated word, grouped by part of speech so
+/// several contexts stay readable.
+class _MeaningsSection extends StatelessWidget {
+  final List<WordMeaning> meanings;
+  const _MeaningsSection({required this.meanings});
+
+  @override
+  Widget build(BuildContext context) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: AppRadius.lg,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionLabel(
+            icon: Icons.menu_book_rounded,
+            label: isArabic ? 'المعاني والمرادفات' : 'Meanings & synonyms',
+          ),
+          const SizedBox(height: 12),
+          for (var i = 0; i < meanings.length; i++) ...[
+            if (i > 0) const SizedBox(height: 14),
+            _MeaningGroup(meaning: meanings[i], isPrimary: i == 0),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _MeaningGroup extends StatelessWidget {
+  final WordMeaning meaning;
+  final bool isPrimary;
+  const _MeaningGroup({required this.meaning, required this.isPrimary});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: palette.primary.withOpacity(0.12),
+                borderRadius: AppRadius.pill,
+              ),
+              child: Text(
+                meaning.partOfSpeech,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: palette.primary,
+                ),
+              ),
+            ),
+            if (isPrimary) ...[
+              const SizedBox(width: 8),
+              Text(
+                isArabic ? 'المعنى الأساسي' : 'primary',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: palette.textSoft,
+                ),
+              ),
+            ],
+          ],
+        ),
+        for (final d in meaning.definitions) ...[
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '•  ',
+                style: TextStyle(color: palette.textSoft, fontSize: 13),
+              ),
+              Expanded(
+                child: Text(
+                  d,
+                  textDirection: TextDirection.ltr,
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.5,
+                    color: palette.text,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+        if (meaning.synonyms.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final s in meaning.synonyms)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: palette.surfaceAlt,
+                    borderRadius: AppRadius.pill,
+                    border: Border.all(
+                      color: palette.textSoft.withOpacity(0.18),
+                    ),
+                  ),
+                  child: Text(
+                    s,
+                    textDirection: TextDirection.ltr,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: palette.secondary,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ],
     );
   }
 }
@@ -627,8 +776,7 @@ class _VoiceBar extends StatelessWidget {
                         onSpeedChanged(s);
                       },
                       labelStyle: TextStyle(
-                        color:
-                            s == speed ? Colors.white : palette.primary,
+                        color: s == speed ? Colors.white : palette.primary,
                         fontWeight: FontWeight.w700,
                       ),
                       selectedColor: AppColors.primary,
