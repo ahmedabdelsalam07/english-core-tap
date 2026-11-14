@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../../core/constants.dart';
 import '../models/word_result.dart';
 import 'api_config.dart';
+import 'local_dictionary.dart';
 
 /// Provides per-word American IPA + native audio URLs + definitions.
 class DictionaryService {
@@ -36,6 +37,11 @@ class DictionaryService {
   }
 
   Future<WordResult?> _fetchWord(String word) async {
+    // Very long or rare words are frequently missing from the free API (or
+    // time out), so bundled entries answer first and always carry a meaning.
+    final bundled = LocalDictionary.lookup(word);
+    if (bundled != null) return bundled;
+
     try {
       final uri = Uri.parse(
         '${Constants.dictionaryApiBase}${Uri.encodeComponent(word.toLowerCase())}',
