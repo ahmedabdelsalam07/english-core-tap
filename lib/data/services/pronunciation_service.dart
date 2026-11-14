@@ -1,6 +1,7 @@
 import '../../core/constants.dart';
 import '../models/history_entry.dart';
 import '../models/pronunciation_result.dart';
+import '../models/word_meaning.dart';
 import '../models/word_result.dart';
 import 'api_config.dart';
 import 'arabic_phonetic_service.dart';
@@ -53,7 +54,8 @@ class PronunciationService {
     final translation = await _translation.translate(trimmed);
 
     // 3. Arabic phonetic transcription from actual pronunciation
-    final phonetic = _phonetic.toArabicPhonetic(trimmed, ipaHints: ipaHints);
+    final phonetic =
+        _phonetic.toArabicPhonetic(trimmed, ipaHints: ipaHints);
 
     // 4. Native audio URL if the first word has one
     final audioUrl = _firstAudioUrl(wordResults);
@@ -66,6 +68,7 @@ class PronunciationService {
       speed: speed,
       createdAt: DateTime.now(),
       nativeAudioUrl: audioUrl,
+      meanings: _collectMeanings(wordResults),
     );
 
     // 5. Persist history
@@ -79,6 +82,23 @@ class PronunciationService {
     );
 
     return result;
+  }
+
+  /// Merges the senses of every word in the phrase, primary sense first, so
+  /// the result screen can show meanings and synonyms again.
+  List<WordMeaning> _collectMeanings(List<WordResult> results) {
+    final merged = <WordMeaning>[];
+    final seen = <String>{};
+    for (final result in results) {
+      for (final meaning in result.meanings) {
+        if (meaning.isEmpty || meaning.partOfSpeech.isEmpty) continue;
+        final key = '${meaning.partOfSpeech}|${meaning.definitions.join('|')}';
+        if (!seen.add(key)) continue;
+        merged.add(meaning);
+        if (merged.length >= 6) return merged;
+      }
+    }
+    return merged;
   }
 
   String? _firstAudioUrl(List<WordResult> results) {
